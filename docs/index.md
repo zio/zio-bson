@@ -103,7 +103,7 @@ val res: Either[String,Banana] = Left(.curvature: Expected BSON type Double, but
 
 You can configure typeclass derivation with annotations.
 
-```scala mdoc:compile-only
+```scala
 import zio.bson._
 import zio.bson.BsonBuilder._
 import zio.bson.magnolia._
