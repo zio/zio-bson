@@ -139,7 +139,6 @@ val jsonFruitConfigured = doc(
 )
 
 jsonFruitConfigured.as[FruitConfigured]
-//Right(Apple(true))
 ```
 
 ## Documentation

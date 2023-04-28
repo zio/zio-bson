@@ -61,7 +61,7 @@ lazy val zioBson = project
 lazy val zioBsonMagnolia = project
   .in(file("zio-bson-magnolia"))
   .dependsOn(zioBson % "compile->compile;test->test")
-  .settings(stdSettings("zio-bson", crossCompile = false))
+  .settings(stdSettings("zio-bson-magnolia", crossCompile = false))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.bson.magnolia"))
   .settings(
