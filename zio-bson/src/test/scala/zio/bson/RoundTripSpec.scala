@@ -26,7 +26,7 @@ object RoundTripSpec extends ZIOSpecDefault {
     roundTripTest("DayOfWeek")(Gen.dayOfWeek, DayOfWeek.MONDAY, str("MONDAY"), isDocument = false),
     roundTripTest("Month")(Gen.month, Month.JANUARY, str("JANUARY"), isDocument = false),
     roundTripTest("MonthDay")(Gen.monthDay, MonthDay.of(Month.JANUARY, 1), str("--01-01"), isDocument = false),
-    roundTripTest("Year")(Gen.year, Year.of(2023), str("2023"), isDocument = false),
+    roundTripTest("Year")(Gen.year(Year.of(-9999), Year.of(9999)), Year.of(2023), int(2023), isDocument = false),
     roundTripTest("YearMonth")(
       Gen.yearMonth(YearMonth.of(-9999, 1), YearMonth.of(9999, 12)),
       YearMonth.of(2023, Month.JANUARY),

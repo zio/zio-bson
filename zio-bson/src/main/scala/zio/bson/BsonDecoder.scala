@@ -31,7 +31,6 @@ import java.time.{
   ZonedDateTime
 }
 import java.util.UUID
-import scala.collection.Factory
 import scala.collection.compat._
 import scala.jdk.CollectionConverters._
 import scala.reflect.{ClassTag, classTag}
@@ -150,26 +149,26 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
     primitiveDecoder(BsonType.BOOLEAN, _.readBoolean(), _.asBoolean().getValue)
 
   // Commonized handling for decoding from string to java.time Class
-  private[bson] def parseJavaTime[A](f: String => A, s: String): Either[String, A] =
-    try Right(f(s))
+  private[bson] def parseJavaTime[V, A](v: V)(f: V => A): Either[String, A] =
+    try Right(f(v))
     catch {
-      case zre: ZoneRulesException      => Left(s"$s is not a valid ISO-8601 format, ${zre.getMessage}")
-      case dtpe: DateTimeParseException => Left(s"$s is not a valid ISO-8601 format, ${dtpe.getMessage}")
-      case dte: DateTimeException       => Left(s"$s is not a valid ISO-8601 format, ${dte.getMessage}")
+      case zre: ZoneRulesException      => Left(s"$v is not a valid ISO-8601 format, ${zre.getMessage}")
+      case dtpe: DateTimeParseException => Left(s"$v is not a valid ISO-8601 format, ${dtpe.getMessage}")
+      case dte: DateTimeException       => Left(s"$v is not a valid ISO-8601 format, ${dte.getMessage}")
       case ex: Exception                => Left(ex.getMessage)
     }
 
   implicit val dayOfWeek: BsonDecoder[DayOfWeek]   =
-    string.mapOrFail(s => parseJavaTime(DayOfWeek.valueOf, s.toUpperCase))
+    string.mapOrFail(s => parseJavaTime(s.toUpperCase)(DayOfWeek.valueOf))
   implicit val month: BsonDecoder[Month]           =
-    string.mapOrFail(s => parseJavaTime(Month.valueOf, s.toUpperCase))
-  implicit val monthDay: BsonDecoder[MonthDay]     = string.mapOrFail(s => parseJavaTime(MonthDay.parse, s))
-  implicit val year: BsonDecoder[Year]             = string.mapOrFail(s => parseJavaTime(Year.parse, s))
-  implicit val yearMonth: BsonDecoder[YearMonth]   = string.mapOrFail(s => parseJavaTime(YearMonth.parse, s))
-  implicit val zoneId: BsonDecoder[ZoneId]         = string.mapOrFail(s => parseJavaTime(ZoneId.of, s))
-  implicit val zoneOffset: BsonDecoder[ZoneOffset] = string.mapOrFail(s => parseJavaTime(ZoneOffset.of, s))
-  implicit val duration: BsonDecoder[Duration]     = string.mapOrFail(s => parseJavaTime(Duration.parse, s))
-  implicit val period: BsonDecoder[Period]         = string.mapOrFail(s => parseJavaTime(Period.parse, s))
+    string.mapOrFail(s => parseJavaTime(s.toUpperCase)(Month.valueOf))
+  implicit val monthDay: BsonDecoder[MonthDay]     = string.mapOrFail(s => parseJavaTime(s)(MonthDay.parse))
+  implicit val year: BsonDecoder[Year]             = int.mapOrFail(i => parseJavaTime(i)(Year.of))
+  implicit val yearMonth: BsonDecoder[YearMonth]   = string.mapOrFail(s => parseJavaTime(s)(YearMonth.parse))
+  implicit val zoneId: BsonDecoder[ZoneId]         = string.mapOrFail(s => parseJavaTime(s)(ZoneId.of))
+  implicit val zoneOffset: BsonDecoder[ZoneOffset] = string.mapOrFail(s => parseJavaTime(s)(ZoneOffset.of))
+  implicit val duration: BsonDecoder[Duration]     = string.mapOrFail(s => parseJavaTime(s)(Duration.parse))
+  implicit val period: BsonDecoder[Period]         = string.mapOrFail(s => parseJavaTime(s)(Period.parse))
 
   implicit val instant: BsonDecoder[Instant] =
     primitiveDecoder(

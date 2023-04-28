@@ -24,7 +24,6 @@ import java.time.{
   ZonedDateTime
 }
 import java.util.UUID
-import scala.collection.Factory
 import scala.collection.compat._
 import scala.reflect.ClassTag
 

@@ -32,6 +32,11 @@ import scala.jdk.CollectionConverters._
 
 trait BsonEncoder[A] { self =>
 
+  {
+    // TODO: better way to fix unused import warning.
+    val _ = IterableOnce
+  }
+
   final def contramap[B](f: B => A): BsonEncoder[B] = new BsonEncoder[B] {
     override def isAbsent(value: B): Boolean = self.isAbsent(f(value))
 
@@ -91,7 +96,7 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   implicit val dayOfWeek: BsonEncoder[DayOfWeek]   = string.contramap(_.toString)
   implicit val month: BsonEncoder[Month]           = string.contramap(_.toString)
   implicit val monthDay: BsonEncoder[MonthDay]     = string.contramap(_.toString)
-  implicit val year: BsonEncoder[Year]             = string.contramap(_.toString)
+  implicit val year: BsonEncoder[Year]             = int.contramap(_.getValue)
   implicit val yearMonth: BsonEncoder[YearMonth]   = string.contramap(_.toString)
   implicit val zoneId: BsonEncoder[ZoneId]         = string.contramap(_.getId)
   implicit val zoneOffset: BsonEncoder[ZoneOffset] = string.contramap(_.toString)

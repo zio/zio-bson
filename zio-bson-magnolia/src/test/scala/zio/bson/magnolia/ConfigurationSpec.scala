@@ -68,11 +68,12 @@ object ConfigurationSpec extends ZIOSpecDefault {
   ) = {
     implicit val conf: BsonCodecConfiguration = config
 
-    val _ = conf
-
     implicit val codecMySealedTrait: BsonCodec[MySealedTrait]       = DeriveBsonCodec.derive
     implicit val codecOtherSealedTrait: BsonCodec[OtherSealedTrait] = DeriveBsonCodec.derive
     implicit val codec: BsonCodec[Struct]                           = DeriveBsonCodec.derive
+
+    // TODO: better way to fix unused warning
+    val _ = (conf, codecMySealedTrait, codecOtherSealedTrait)
 
     suite(name)(
       test("toBsonValue/as") {
