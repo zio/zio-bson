@@ -55,11 +55,11 @@ object BsonCodecConfiguration {
      *   case class Outer(mySum: MySum)
      * }}}
      *
-     * Result BSON for `DiscriminatorField("$type")`:
+     * Result BSON for `DiscriminatorField("type")`:
      * {{{
      *   {
      *     mySum: {
-     *       $type: "SomeBranch"
+     *       type: "SomeBranch"
      *       a: 123
      *     }
      *   }

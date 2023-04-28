@@ -74,7 +74,8 @@ lazy val zioBsonMagnolia = project
       "org.scala-lang.modules"       %% "scala-collection-compat" % scalaCollectionCompatVersion
     ),
     scalaReflectTestSettings,
-    macroDefinitionSettings
+    macroDefinitionSettings,
+    scalacOptions -= "-Xfatal-warnings"
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
