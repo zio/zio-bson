@@ -19,79 +19,90 @@ inThisBuild(
   )
 )
 
+addCommandAlias("prepare", "fix; fmt")
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
 
-addCommandAlias(
-  "testJVM",
-  ";zioBsonJVM/test"
-)
-addCommandAlias(
-  "testJS",
-  ";zioBsonJS/test"
-)
-addCommandAlias(
-  "testNative",
-  ";zioBsonNative/test:compile"
-)
-
-val zioVersion = "1.0.9"
+val zioVersion                   = "2.0.10"
+val bsonVersion                  = "4.9.1"
+val scalaCollectionCompatVersion = "2.10.0"
+val magnoliaVersion              = "1.1.3"
 
 lazy val root = project
   .in(file("."))
   .settings(
-    publish / skip := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    publish / skip := true
   )
   .aggregate(
-    zioBsonJVM,
-    zioBsonJS,
-    zioBsonNative,
-    docs
+    zioBson,
+    docs,
+    zioBsonMagnolia
   )
 
-lazy val zioBson = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val zioBson = project
   .in(file("zio-bson"))
   .settings(stdSettings("zio-bson"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.bson"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % Test,
-      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
-    )
+      "dev.zio"                %% "zio"                     % zioVersion,
+      "dev.zio"                %% "zio-test"                % zioVersion % Test,
+      "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
+      "org.mongodb"             % "bson"                    % bsonVersion,
+      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
+    ),
+    scalaReflectTestSettings
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
-lazy val zioBsonJS = zioBson.js
-  .settings(jsSettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaJSUseMainModuleInitializer := true)
-
-lazy val zioBsonJVM = zioBson.jvm
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaReflectTestSettings)
-
-lazy val zioBsonNative = zioBson.native
-  .settings(nativeSettings)
+lazy val zioBsonMagnolia = project
+  .in(file("zio-bson-magnolia"))
+  .dependsOn(zioBson % "compile->compile;test->test")
+  .settings(stdSettings("zio-bson", crossCompile = false))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.bson.magnolia"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"                      %% "zio"                     % zioVersion,
+      "dev.zio"                      %% "zio-test"                % zioVersion % Test,
+      "dev.zio"                      %% "zio-test-magnolia"       % zioVersion % Test,
+      "dev.zio"                      %% "zio-test-sbt"            % zioVersion % Test,
+      "com.softwaremill.magnolia1_2" %% "magnolia"                % magnoliaVersion,
+      "org.scala-lang.modules"       %% "scala-collection-compat" % scalaCollectionCompatVersion
+    ),
+    scalaReflectTestSettings,
+    macroDefinitionSettings
+  )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+  .enablePlugins(BuildInfoPlugin)
 
 lazy val docs = project
   .in(file("zio-bson-docs"))
-  .settings(stdSettings("zio-bson"))
+  .dependsOn(zioBson, zioBsonMagnolia)
+  .settings(stdSettings("zio-bson-docs", crossCompile = false))
   .settings(
-    publish / skip := true,
     moduleName := "zio-bson-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioBsonJVM),
-    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-    cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+    scalacOptions += "-Ymacro-annotations",
+    projectName := "ZIO Bson",
+    mainModuleName := (zioBson / moduleName).value,
+    projectStage := ProjectStage.Development,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioBson, zioBsonMagnolia),
+    docsPublishBranch := "main",
+    readmeContribution +=
+      """|
+         |#### TL;DR
+         |
+         |Before you submit a PR, make sure your tests are passing, and that the code is properly formatted
+         |
+         |```
+         |sbt prepare
+         |
+         |sbt test
+         |```""".stripMargin
   )
-  .dependsOn(zioBsonJVM)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .enablePlugins(WebsitePlugin)

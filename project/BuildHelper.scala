@@ -1,10 +1,8 @@
 import explicitdeps.ExplicitDepsPlugin.autoImport._
-import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 import sbtbuildinfo.BuildInfoKeys._
 import sbtbuildinfo._
-import sbtcrossproject.CrossPlugin.autoImport._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
@@ -20,12 +18,11 @@ object BuildHelper {
     val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
-  val Scala211: String   = versions("2.11")
-  val Scala212: String   = versions("2.12")
-  val Scala213: String   = versions("2.13")
-  val ScalaDotty: String = versions("3.0")
+  val Scala212: String = versions("2.12")
+  val Scala213: String = versions("2.13")
+  val Scala3: String   = versions("3.2")
 
-  val SilencerVersion = "1.7.5"
+  val SilencerVersion = "1.7.12"
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -66,22 +63,22 @@ object BuildHelper {
     )
 
   val dottySettings = Seq(
-    crossScalaVersions += ScalaDotty,
+    crossScalaVersions += Scala3,
     scalacOptions ++= {
-      if (scalaVersion.value == ScalaDotty)
+      if (scalaVersion.value == Scala3)
         Seq("-noindent")
       else
         Seq()
     },
     scalacOptions --= {
-      if (scalaVersion.value == ScalaDotty)
+      if (scalaVersion.value == Scala3)
         Seq("-Xfatal-warnings")
       else
         Seq()
     },
     Compile / doc / sources := {
       val old = (Compile / doc / sources).value
-      if (scalaVersion.value == ScalaDotty) {
+      if (scalaVersion.value == Scala3) {
         Nil
       } else {
         old
@@ -89,7 +86,7 @@ object BuildHelper {
     },
     Test / parallelExecution := {
       val old = (Test / parallelExecution).value
-      if (scalaVersion.value == ScalaDotty) {
+      if (scalaVersion.value == Scala3) {
         false
       } else {
         old
@@ -98,7 +95,7 @@ object BuildHelper {
   )
 
   val scalaReflectSettings = Seq(
-    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "1.0.0-M10")
+    libraryDependencies ++= Seq("dev.zio" %% "izumi-reflect" % "1.0.0-M10")
   )
 
   // Keep this consistent with the version in .core-tests/shared/src/test/scala/REPLSpec.scala
@@ -187,14 +184,13 @@ object BuildHelper {
       case _             => Seq.empty
     }
 
-  def platformSpecificSources(platform: String, conf: String, baseDirectory: File)(versions: String*) = for {
-    platform <- List("shared", platform)
-    version  <- "scala" :: versions.toList.map("scala-" + _)
-    result    = baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
+  def platformSpecificSources(conf: String, baseDirectory: File)(versions: String*) = for {
+    version <- "scala" :: versions.toList.map("scala-" + _)
+    result   = baseDirectory.getParentFile / "src" / conf / version
     if result.exists
   } yield result
 
-  def crossPlatformSources(scalaVer: String, platform: String, conf: String, baseDir: File) = {
+  def crossPlatformSources(scalaVer: String, conf: String, baseDir: File) = {
     val versions = CrossVersion.partialVersion(scalaVer) match {
       case Some((2, 11)) =>
         List("2.11", "2.11+", "2.11-2.12", "2.x")
@@ -207,14 +203,13 @@ object BuildHelper {
       case _             =>
         List()
     }
-    platformSpecificSources(platform, conf, baseDir)(versions: _*)
+    platformSpecificSources(conf, baseDir)(versions: _*)
   }
 
   lazy val crossProjectSettings = Seq(
     Compile / unmanagedSourceDirectories ++= {
       crossPlatformSources(
         scalaVersion.value,
-        crossProjectPlatform.value.identifier,
         "main",
         baseDirectory.value
       )
@@ -222,20 +217,19 @@ object BuildHelper {
     Test / unmanagedSourceDirectories ++= {
       crossPlatformSources(
         scalaVersion.value,
-        crossProjectPlatform.value.identifier,
         "test",
         baseDirectory.value
       )
     }
   )
 
-  def stdSettings(prjName: String) = Seq(
+  def stdSettings(prjName: String, crossCompile: Boolean = true) = Seq(
     name := s"$prjName",
-    crossScalaVersions := Seq(Scala211, Scala212, Scala213),
+    crossScalaVersions := (if (crossCompile) Seq(Scala212, Scala213, Scala3) else Seq(Scala213)),
     ThisBuild / scalaVersion := Scala213,
     scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
-      if (scalaVersion.value == ScalaDotty)
+      if (scalaVersion.value == Scala3)
         Seq(
           "com.github.ghik" % s"silencer-lib_$Scala213" % SilencerVersion % Provided
         )
@@ -245,7 +239,7 @@ object BuildHelper {
           compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full)
         )
     },
-    semanticdbEnabled := scalaVersion.value != ScalaDotty, // enable SemanticDB
+    semanticdbEnabled := scalaVersion.value != Scala3, // enable SemanticDB
     semanticdbOptions += "-P:semanticdb:synthetics:on",
     semanticdbVersion := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
@@ -255,8 +249,7 @@ object BuildHelper {
     ),
     Test / parallelExecution := true,
     incOptions ~= (_.withLogRecompileOnMacro(false)),
-    autoAPIMappings := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    autoAPIMappings := true
   )
 
   def macroExpansionSettings = Seq(
@@ -278,7 +271,7 @@ object BuildHelper {
   def macroDefinitionSettings = Seq(
     scalacOptions += "-language:experimental.macros",
     libraryDependencies ++= {
-      if (scalaVersion.value == ScalaDotty) Seq()
+      if (scalaVersion.value == Scala3) Seq()
       else
         Seq(
           "org.scala-lang" % "scala-reflect"  % scalaVersion.value % "provided",
@@ -287,20 +280,9 @@ object BuildHelper {
     }
   )
 
-  def jsSettings = Seq(
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % "2.2.2",
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.2.2"
-  )
-
-  def nativeSettings = Seq(
-    Test / skip := true,
-    doc / skip := true,
-    Compile / doc / sources := Seq.empty
-  )
-
   val scalaReflectTestSettings: List[Setting[_]] = List(
     libraryDependencies ++= {
-      if (scalaVersion.value == ScalaDotty)
+      if (scalaVersion.value == Scala3)
         Seq("org.scala-lang" % "scala-reflect" % Scala213           % Test)
       else
         Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % Test)
@@ -327,8 +309,7 @@ object BuildHelper {
         |${item("fix")} - Fixes sources files using scalafix
         |${item("fmt")} - Formats source files using scalafmt
         |${item("~compileJVM")} - Compiles all JVM modules (file-watch enabled)
-        |${item("testJVM")} - Runs all JVM tests
-        |${item("testJS")} - Runs all ScalaJS tests
+        |${item("test")} - Runs all tests
         |${item("testOnly *.YourSpec -- -t \"YourLabel\"")} - Only runs tests with matching term e.g.
         |${subItem("coreTestsJVM/testOnly *.ZIOSpec -- -t \"happy-path\"")}
         |${item("docs/docusaurusCreateSite")} - Generates the ZIO microsite
