@@ -29,7 +29,7 @@ lazy val root = project
   )
   .aggregate(
     `zio-bson`,
-    `zio-bson-docs`,
+    docs,
     `zio-bson-magnolia`
   )
 
@@ -62,7 +62,7 @@ lazy val `zio-bson-magnolia` = project
     scalacOptions -= "-Xfatal-warnings"
   )
 
-lazy val `zio-bson-docs` = project
+lazy val docs = project
   .dependsOn(`zio-bson`, `zio-bson-magnolia`)
   .settings(stdSettings())
   .settings(
