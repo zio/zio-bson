@@ -63,6 +63,7 @@ lazy val `zio-bson-magnolia` = project
   )
 
 lazy val docs = project
+  .in(file("zio-bson-docs"))
   .dependsOn(`zio-bson`, `zio-bson-magnolia`)
   .settings(stdSettings())
   .settings(
