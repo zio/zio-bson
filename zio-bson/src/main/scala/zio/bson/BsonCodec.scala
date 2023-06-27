@@ -66,6 +66,7 @@ object BsonCodec extends CollectionCodecs with BsonValueCodecs {
   implicit val char: BsonCodec[Char]     = BsonCodec(BsonEncoder.char, BsonDecoder.char)
   implicit val symbol: BsonCodec[Symbol] = BsonCodec(BsonEncoder.symbol, BsonDecoder.symbol)
   implicit val uuid: BsonCodec[UUID]     = BsonCodec(BsonEncoder.uuid, BsonDecoder.uuid)
+  implicit val currency: BsonCodec[java.util.Currency] = BsonCodec(BsonEncoder.currency, BsonDecoder.currency)
 
   implicit def option[A](implicit encoder: BsonEncoder[A], decoder: BsonDecoder[A]): BsonCodec[Option[A]] =
     BsonCodec(BsonEncoder.option(encoder), BsonDecoder.option(decoder))
