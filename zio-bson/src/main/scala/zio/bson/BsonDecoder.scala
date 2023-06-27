@@ -262,6 +262,10 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
     Try(UUID.fromString(s)).toEither.swap.map(t => s"Invalid UUID: ${t.getMessage}").swap
   }
 
+  implicit val currency: BsonDecoder[java.util.Currency] = string.mapOrFail { s =>
+    Try(java.util.Currency.getInstance(s)).toEither.swap.map(t => s"Invalid Currency: ${t.getMessage}").swap
+  }
+
   implicit def option[A](implicit A: BsonDecoder[A]): BsonDecoder[Option[A]] = new BsonDecoder[Option[A]] {
     override def decodeMissingUnsafe(trace: List[BsonTrace]): Option[A] = None
 
