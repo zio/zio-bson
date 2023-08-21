@@ -153,6 +153,8 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
 
   implicit val uuid: BsonEncoder[UUID] = string.contramap(_.toString)
 
+  implicit val currency: BsonEncoder[java.util.Currency] = string.contramap(_.getCurrencyCode)
+
   implicit def option[A](implicit encoder: BsonEncoder[A]): BsonEncoder[Option[A]] = new BsonEncoder[Option[A]] {
     override def isAbsent(value: Option[A]): Boolean = value.isEmpty
 

@@ -95,6 +95,7 @@ object RoundTripSpec extends ZIOSpecDefault {
       new BsonDecimal128(Decimal128.POSITIVE_ZERO),
       isDocument = false
     ),
+    roundTripTest("JavaCurrency")(Gen.currency, java.util.Currency.getInstance("USD"), str("USD"), isDocument = false),
     roundTripTest("BigDecimal")(
       genBigDecimal128,
       BigDecimal(0),

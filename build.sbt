@@ -4,7 +4,7 @@ inThisBuild(
   List(
     name := "ZIO Bson",
     organization := "dev.zio",
-    zioVersion := "2.0.10",
+    zioVersion := "2.0.16",
     ciEnabledBranches := Seq("main"),
     crossScalaVersions := Seq.empty,
     developers := List(
