@@ -10,7 +10,7 @@
 
 ## Introduction
 
-The goal of this project is to create the best all-round JSON library for Scala:
+The goal of this project is to create the best all-round BSON library for Scala:
 
 - **Native BSON support** to avoid intermediate JSON conversions and support BSON types.
 - **Future-Proof**, prepared for Scala 3 and next-generation Java.
@@ -117,9 +117,9 @@ object Fruit {
   implicit val codec: BsonCodec[Fruit] = DeriveBsonCodec.derive
 }
 
-val jsonFruit = doc( "Banana" -> doc( "curvature" -> double(0.5) ))
+val bsonFruit = doc( "Banana" -> doc( "curvature" -> double(0.5) ))
 
-jsonFruit.as[Fruit]
+bsonFruit.as[Fruit]
 //Right(Banana(0.5))
 
 @bsonDiscriminator("$type")
@@ -133,12 +133,12 @@ object FruitConfigured {
   implicit val codec: BsonCodec[FruitConfigured] = DeriveBsonCodec.derive
 }
 
-val jsonFruitConfigured = doc(
+val bsonFruitConfigured = doc(
   "$type" -> str("custom_type_name"),
   "is_poisoned" -> bool(true)
 )
 
-jsonFruitConfigured.as[FruitConfigured]
+bsonFruitConfigured.as[FruitConfigured]
 ```
 
 ## Documentation
