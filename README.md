@@ -23,8 +23,8 @@ The goal of this project is to create the best all-round JSON library for Scala:
 In order to use this library, we need to add the following lines in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-bson" % "1.0.3"
-libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.3"
+libraryDependencies += "dev.zio" %% "zio-bson" % "1.0.2"
+libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.2"
 ```
 
 ## zio-schema support
@@ -147,7 +147,7 @@ Learn more on the [ZIO Bson homepage](https://zio.dev/zio-bson)!
 
 ## Contributing
 
-For the general guidelines, see ZIO [contributor's guide](https://zio.dev/about/contributing).
+For the general guidelines, see ZIO [contributor's guide](https://zio.dev/contributor-guidelines).
 #### TL;DR
 
 Before you submit a PR, make sure your tests are passing, and that the code is properly formatted
@@ -160,7 +160,7 @@ sbt test
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
+See the [Code of Conduct](https://zio.dev/code-of-conduct)
 
 ## Support
 
