@@ -23,8 +23,8 @@ The goal of this project is to create the best all-round BSON library for Scala:
 In order to use this library, we need to add the following lines in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-bson" % "1.0.4"
-libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.4"
+libraryDependencies += "dev.zio" %% "zio-bson" % "1.0.2"
+libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.2"
 ```
 
 ## zio-schema support
