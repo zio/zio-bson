@@ -1,7 +1,7 @@
 ---
 id: index
 title: "Getting Started with ZIO Bson"
-sidebar_label: "Getting Started"
+sidebar_label: "ZIO Bson"
 ---
 
 [ZIO Bson](https://github.com/zio/zio-bson) is BSON library with tight ZIO integration.
