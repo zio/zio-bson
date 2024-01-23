@@ -8,6 +8,10 @@ import zio.bson.{BsonEncoder, _}
 
 import scala.jdk.CollectionConverters._
 
+// scalafix:off
+import scala.language.experimental.macros
+// scalafix:on
+
 trait DeriveBsonEncoder {
   type Typeclass[T] = BsonEncoder[T]
 
