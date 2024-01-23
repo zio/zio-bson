@@ -7,7 +7,7 @@ import org.bson.types.{Decimal128, ObjectId}
 import zio.bson.BsonEncoder.EncoderContext
 import zio.{Chunk, NonEmptyChunk}
 
-import java.math.{BigDecimal => JBigDecimal, BigInteger}
+import java.math.{BigInteger, BigDecimal => JBigDecimal}
 import java.time.{
   DayOfWeek,
   Duration,
@@ -27,12 +27,13 @@ import java.time.{
   ZonedDateTime
 }
 import java.util.UUID
+import scala.annotation.unused
 import scala.collection.compat._
 import scala.jdk.CollectionConverters._
 
 trait BsonEncoder[A] { self =>
 
-  {
+  locally {
     // TODO: better way to fix unused import warning.
     val _ = IterableOnce
   }
@@ -49,10 +50,8 @@ trait BsonEncoder[A] { self =>
   /**
    * @return true if encoder can skip this value.
    */
-  def isAbsent(value: A): Boolean = {
-    val _ = value
+  def isAbsent(@unused value: A): Boolean =
     false
-  }
 
   def encode(writer: BsonWriter, value: A, ctx: EncoderContext): Unit
 
