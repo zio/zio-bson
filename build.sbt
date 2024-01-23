@@ -4,7 +4,7 @@ inThisBuild(
   List(
     name := "ZIO Bson",
     organization := "dev.zio",
-    zioVersion := "2.0.16",
+    zioVersion := "2.0.21",
     ciEnabledBranches := Seq("main"),
     crossScalaVersions := Seq.empty,
     developers := List(
@@ -18,9 +18,9 @@ inThisBuild(
   )
 )
 
-val bsonVersion                  = "4.9.1"
-val scalaCollectionCompatVersion = "2.10.0"
-val magnoliaVersion              = "1.1.3"
+val bsonVersion                  = "4.11.1"
+val scalaCollectionCompatVersion = "2.11.0"
+val magnoliaVersion              = "1.1.8"
 
 lazy val root = project
   .in(file("."))
@@ -38,7 +38,7 @@ lazy val `zio-bson` = project
   .settings(buildInfoSettings("zio.bson"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala212.value, scala213.value, "3.3.0"),
+    crossScalaVersions := Seq(scala212.value, scala213.value, "3.3.1"),
     libraryDependencies ++= Seq(
       "org.mongodb"             % "bson"                    % bsonVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
