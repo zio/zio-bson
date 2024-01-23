@@ -7,7 +7,6 @@ import zio.bson.magnolia.BsonCodecConfiguration.SumTypeHandling
 import zio.bson.{BsonEncoder, _}
 
 import scala.jdk.CollectionConverters._
-import scala.language.experimental.macros
 
 trait DeriveBsonEncoder {
   type Typeclass[T] = BsonEncoder[T]

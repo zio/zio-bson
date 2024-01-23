@@ -7,7 +7,7 @@ import org.bson.types.{Decimal128, ObjectId}
 import zio.bson.BsonEncoder.EncoderContext
 import zio.{Chunk, NonEmptyChunk}
 
-import java.math.{BigInteger, BigDecimal => JBigDecimal}
+import java.math.{BigDecimal => JBigDecimal, BigInteger}
 import java.time.{
   DayOfWeek,
   Duration,
