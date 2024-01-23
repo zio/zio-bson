@@ -9,7 +9,10 @@ import zio.bson.{BsonDecoder, _}
 
 import scala.collection.immutable.{ArraySeq, HashMap}
 import scala.jdk.CollectionConverters._
+
+// scalafix:off
 import scala.language.experimental.macros
+// scalafix:on
 
 trait DeriveBsonDecoder {
   type Typeclass[T] = BsonDecoder[T]

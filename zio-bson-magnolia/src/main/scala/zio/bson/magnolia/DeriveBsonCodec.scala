@@ -2,7 +2,9 @@ package zio.bson.magnolia
 
 import zio.bson.BsonCodec
 
+// scalafix:off
 import scala.language.experimental.macros
+// scalafix:on
 
 object DeriveBsonCodec {
   def derive[T]: BsonCodec[T] = macro genBoth[T]
