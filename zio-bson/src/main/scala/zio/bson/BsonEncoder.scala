@@ -48,7 +48,8 @@ trait BsonEncoder[A] { self =>
   }
 
   /**
-   * @return true if encoder can skip this value.
+   * @return
+   *   true if encoder can skip this value.
    */
   def isAbsent(@unused value: A): Boolean =
     false
