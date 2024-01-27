@@ -28,7 +28,7 @@ trait DeriveBsonDecoder {
       private val indexes = names.zipWithIndex.to(HashMap)
       private val spans   = names.map(BsonTrace.Field)
 
-      private val noExtra                           =
+      private val noExtra =
         caseClass.annotations.collectFirst { case _: bsonNoExtraFields => }.isDefined || !configuration.allowExtraFields
 
       private lazy val tcs: Array[BsonDecoder[Any]] =
@@ -123,7 +123,7 @@ trait DeriveBsonDecoder {
       case SumTypeHandling.DiscriminatorField(name)  => Some(name)
     }
 
-    val discriminator                            =
+    val discriminator =
       sealedTrait.annotations.collectFirst { case bsonDiscriminator(name) => name }.orElse(configuredDiscriminator)
 
     def getSubName(sub: Subtype[BsonDecoder, ?]) =

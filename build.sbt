@@ -2,12 +2,12 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name := "ZIO Bson",
-    organization := "dev.zio",
-    zioVersion := "2.0.21",
-    ciEnabledBranches := Seq("main"),
+    name               := "ZIO Bson",
+    organization       := "dev.zio",
+    zioVersion         := "2.0.21",
+    ciEnabledBranches  := Seq("main"),
     crossScalaVersions := Seq.empty,
-    developers := List(
+    developers         := List(
       Developer(
         "jdegoes",
         "John De Goes",
@@ -68,14 +68,14 @@ lazy val docs = project
   .dependsOn(`zio-bson`, `zio-bson-magnolia`)
   .settings(stdSettings())
   .settings(
-    crossScalaVersions := Seq(scala213.value),
-    moduleName := "zio-bson-docs",
+    crossScalaVersions                         := Seq(scala213.value),
+    moduleName                                 := "zio-bson-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     scalacOptions += "-Ymacro-annotations",
-    projectName := "ZIO Bson",
-    mainModuleName := (`zio-bson` / moduleName).value,
-    projectStage := ProjectStage.Development,
+    projectName                                := "ZIO Bson",
+    mainModuleName                             := (`zio-bson` / moduleName).value,
+    projectStage                               := ProjectStage.Development,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`zio-bson`, `zio-bson-magnolia`),
     readmeContribution +=
       """|

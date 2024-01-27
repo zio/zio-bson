@@ -32,7 +32,7 @@ object ConfigurationSpec extends ZIOSpecDefault {
       @bsonField("constFieldName") fieldAbc: Int,
       optNone: Option[Int],
       optSome: Option[Int]
-    )                                                     extends MySealedTrait
+    ) extends MySealedTrait
     @bsonHint("ContClassName") case class BranchB(a: Int) extends MySealedTrait
   }
 

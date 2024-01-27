@@ -19,7 +19,7 @@ trait DeriveBsonEncoder {
     new BsonEncoder[T] {
       private val keepNulls = !configuration.skipNullsInCaseClass
 
-      private val params               =
+      private val params =
         caseClass.parameters.filter(_.annotations.collectFirst { case _: bsonExclude => }.isEmpty).toArray
 
       private val names: Array[String] =
@@ -75,7 +75,7 @@ trait DeriveBsonEncoder {
       case SumTypeHandling.DiscriminatorField(name)  => Some(name)
     }
 
-    val discriminator                            =
+    val discriminator =
       sealedTrait.annotations.collectFirst { case bsonDiscriminator(name) => name }.orElse(configuredDiscriminator)
 
     def getSubName(sub: Subtype[BsonEncoder, ?]) =
