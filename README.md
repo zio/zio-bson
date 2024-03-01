@@ -139,6 +139,7 @@ val bsonFruitConfigured = doc(
 )
 
 bsonFruitConfigured.as[FruitConfigured]
+//Right(Apple(true))
 ```
 
 ## Documentation
