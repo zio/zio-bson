@@ -30,7 +30,7 @@ libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.6"
 ## zio-schema support
 
 `zio-bson-magnolia` projects provides typeclass derivation only for `scala` `2.13`.
-You can use [zio-schema-bson](https://github.com/zio/zio-schema/) instead to get typeclass derivation on `scala` `2.12`, `2.13` and `3.2`.
+You can use [zio-schema-bson](https://github.com/zio/zio-schema/) instead to get typeclass derivation on `scala` `2.12`, `2.13` and `3`.
 
 ## Example
 
