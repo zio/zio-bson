@@ -20,7 +20,7 @@ inThisBuild(
 
 val bsonVersion                  = "5.0.1"
 val scalaCollectionCompatVersion = "2.11.0"
-val magnoliaVersion              = "1.1.8"
+val magnoliaVersion              = "1.1.10"
 
 lazy val root = project
   .in(file("."))
