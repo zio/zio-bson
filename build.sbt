@@ -1,12 +1,15 @@
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
+val scala213Version = "2.13.14"
+
 inThisBuild(
   List(
     name               := "ZIO Bson",
     organization       := "dev.zio",
-    zioVersion         := "2.0.22",
+    zioVersion         := "2.1.9",
     ciEnabledBranches  := Seq("main"),
-    crossScalaVersions := Seq.empty,
+    crossScalaVersions := Seq(scala213Version),
+    scalaVersion       := scala213Version,
     developers         := List(
       Developer(
         "jdegoes",
@@ -38,7 +41,7 @@ lazy val `zio-bson` = project
   .settings(buildInfoSettings("zio.bson"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala212.value, scala213.value, "3.4.3"),
+    crossScalaVersions := Seq(scala212.value, scala213Version, "3.4.3"),
     libraryDependencies ++= Seq(
       "org.mongodb"             % "bson"                    % bsonVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
@@ -52,7 +55,7 @@ lazy val `zio-bson-magnolia` = project
   .settings(buildInfoSettings("zio.bson.magnolia"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala213.value),
+    crossScalaVersions := Seq(scala213Version),
     libraryDependencies ++= Seq(
       "dev.zio"                      %% "zio-test-magnolia"       % zioVersion.value % Test,
       "com.softwaremill.magnolia1_2" %% "magnolia"                % magnoliaVersion,
@@ -68,7 +71,7 @@ lazy val docs = project
   .dependsOn(`zio-bson`, `zio-bson-magnolia`)
   .settings(stdSettings())
   .settings(
-    crossScalaVersions                         := Seq(scala213.value),
+    crossScalaVersions                         := Seq(scala213Version),
     moduleName                                 := "zio-bson-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
