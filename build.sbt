@@ -38,7 +38,7 @@ lazy val `zio-bson` = project
   .settings(buildInfoSettings("zio.bson"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala212.value, scala213.value, "3.4.1"),
+    crossScalaVersions := Seq(scala212.value, scala213.value, "3.4.3"),
     libraryDependencies ++= Seq(
       "org.mongodb"             % "bson"                    % bsonVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
