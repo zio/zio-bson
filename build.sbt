@@ -1,6 +1,6 @@
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
-val scala213Version = "2.13.14"
+val scala213Version = "2.13.15"
 
 inThisBuild(
   List(
