@@ -21,7 +21,6 @@ inThisBuild(
   )
 )
 
-
 val bsonVersion                  = "5.6.2"
 val scalaCollectionCompatVersion = "2.14.0"
 val magnoliaVersion              = "1.1.10"
