@@ -109,7 +109,7 @@ object ConfigurationSpec extends ZIOSpecDefault {
     )
   }
 
-  def spec: Spec[Environment with TestEnvironment with Scope,Any] = suite("ConfigurationSpec")(
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("ConfigurationSpec")(
     testConfiguration(
       "Wrap sum, skipNullsInCaseClass, identity class names, identity field names",
       BsonCodecConfiguration(
