@@ -21,7 +21,7 @@ inThisBuild(
   )
 )
 
-val bsonVersion                  = "5.3.1"
+val bsonVersion                  = "5.6.2"
 val scalaCollectionCompatVersion = "2.13.0"
 val magnoliaVersion              = "1.1.10"
 
@@ -41,7 +41,7 @@ lazy val `zio-bson` = project
   .settings(buildInfoSettings("zio.bson"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala212.value, scala213Version, "3.6.3"),
+    crossScalaVersions := Seq(scala212.value, scala213Version, "3.3.7"),
     libraryDependencies ++= Seq(
       "org.mongodb"             % "bson"                    % bsonVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
