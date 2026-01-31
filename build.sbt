@@ -60,7 +60,7 @@ lazy val `zio-bson-magnolia` = project
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
     ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((3, _)) =>
-        Seq( "com.softwaremill.magnolia1_3" %% "magnolia" % magnolia3Version)
+        Seq("com.softwaremill.magnolia1_3" %% "magnolia" % magnolia3Version)
       case _            =>
         Seq("com.softwaremill.magnolia1_2" %% "magnolia" % magnolia2Version)
     })),
