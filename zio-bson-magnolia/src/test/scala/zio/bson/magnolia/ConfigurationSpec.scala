@@ -3,7 +3,6 @@ package zio.bson.magnolia
 import org.bson._
 import org.bson.conversions.Bson
 import org.bson.io.BasicOutputBuffer
-import zio.ZIO
 import zio.bson.BsonBuilder._
 import zio.bson.TestUtils._
 import zio.bson.magnolia.BsonCodecConfiguration.SumTypeHandling.{DiscriminatorField, WrapperWithClassNameField}
@@ -12,6 +11,7 @@ import zio.bson.{bsonDiscriminator, bsonExclude, bsonField, bsonHint, _}
 import zio.test._
 import zio.test.diff.Diff
 import zio.test.magnolia.DeriveDiff
+import zio.{Scope, ZIO}
 
 object ConfigurationSpec extends ZIOSpecDefault {
 
@@ -108,7 +108,7 @@ object ConfigurationSpec extends ZIOSpecDefault {
     )
   }
 
-  def spec = suite("ConfigurationSpec")(
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("ConfigurationSpec")(
     testConfiguration(
       "Wrap sum, skipNullsInCaseClass, identity class names, identity field names",
       BsonCodecConfiguration(
