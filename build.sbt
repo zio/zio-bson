@@ -6,7 +6,7 @@ inThisBuild(
     organization       := "dev.zio",
     zioVersion         := "2.1.24",
     ciEnabledBranches  := Seq("main"),
-    crossScalaVersions := Seq(scala213.value),
+    crossScalaVersions := Seq(scala213.value, scala3.value),
     scalaVersion       := scala213.value,
     developers         := List(
       Developer(
@@ -21,7 +21,8 @@ inThisBuild(
 
 val bsonVersion                  = "5.6.3"
 val scalaCollectionCompatVersion = "2.14.0"
-val magnoliaVersion              = "1.1.10"
+val magnolia2Version             = "1.1.10"
+val magnolia3Version             = "1.3.8"
 
 lazy val root = project
   .in(file("."))
@@ -53,12 +54,16 @@ lazy val `zio-bson-magnolia` = project
   .settings(buildInfoSettings("zio.bson.magnolia"))
   .settings(enableZIO())
   .settings(
-    crossScalaVersions := Seq(scala213.value),
-    libraryDependencies ++= Seq(
-      "dev.zio"                      %% "zio-test-magnolia"       % zioVersion.value % Test,
-      "com.softwaremill.magnolia1_2" %% "magnolia"                % magnoliaVersion,
-      "org.scala-lang.modules"       %% "scala-collection-compat" % scalaCollectionCompatVersion
-    ),
+    crossScalaVersions := Seq(scala213.value, scala3.value),
+    libraryDependencies ++= (Seq(
+      "dev.zio"                %% "zio-test-magnolia"       % zioVersion.value % Test,
+      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion
+    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((3, _)) =>
+        Seq("com.softwaremill.magnolia1_3" %% "magnolia" % magnolia3Version)
+      case _            =>
+        Seq("com.softwaremill.magnolia1_2" %% "magnolia" % magnolia2Version)
+    })),
     scalaReflectTestSettings,
     macroDefinitionSettings,
     scalacOptions -= "-Xfatal-warnings"
@@ -69,7 +74,7 @@ lazy val docs = project
   .dependsOn(`zio-bson`, `zio-bson-magnolia`)
   .settings(stdSettings())
   .settings(
-    crossScalaVersions                         := Seq(scala213.value),
+    crossScalaVersions                         := Seq(scala213.value, scala3.value),
     moduleName                                 := "zio-bson-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
