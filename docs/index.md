@@ -90,6 +90,10 @@ val bsonVal: BsonValue = doc("curvature" -> double(0.2))
 bsonVal.as[Banana]
 ```
 
+## Type Mappings
+
+See [Type Mappings](types.md) for the full list of supported Scala and Java types, their primary BSON types, and decoder fallbacks.
+
 ## Errors
 
 Bad BSON will produce an error with path and contextual information
