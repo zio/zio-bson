@@ -83,6 +83,8 @@ lazy val docs = project
     mainModuleName                             := (`zio-bson` / moduleName).value,
     projectStage                               := ProjectStage.Development,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`zio-bson`, `zio-bson-magnolia`),
+    // Unified Scaladoc runs without the SemanticDB compiler plugin.
+    ScalaUnidoc / unidoc / scalacOptions ~= (_.filterNot(_.startsWith("-P:semanticdb:"))),
     readmeContribution +=
       """|
          |#### TL;DR
