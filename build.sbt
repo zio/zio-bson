@@ -82,7 +82,11 @@ lazy val docs = project
     projectName                                := "ZIO Bson",
     mainModuleName                             := (`zio-bson` / moduleName).value,
     projectStage                               := ProjectStage.Development,
+    // Wait for mdoc to finish before building the website, including with sbt's thin client.
+    Compile / runMain / clientSide             := false,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`zio-bson`, `zio-bson-magnolia`),
+    // Unified Scaladoc runs without the SemanticDB compiler plugin.
+    ScalaUnidoc / unidoc / scalacOptions ~= (_.filterNot(_.startsWith("-P:semanticdb:"))),
     readmeContribution +=
       """|
          |#### TL;DR
