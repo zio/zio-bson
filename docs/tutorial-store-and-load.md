@@ -1,0 +1,151 @@
+---
+id: tutorial-store-and-load
+title: "Tutorial: Store and Load a Case Class with MongoDB"
+sidebar_label: "Store and Load a Case Class"
+---
+
+## What You Will Build
+
+In this tutorial, we will define a case class, derive a BSON codec for it, and see the exact document that MongoDB would store. Then we will load that document back into a Scala value. At the end, we will connect the codec to the MongoDB driver.
+
+By the end of this tutorial, you will know how to write a codec for your own types, how the fields of a case class become BSON keys, and how to check that a stored document reads back correctly. You do not need a MongoDB server to follow the steps. The driver step is shown as text, because it needs a running server.
+
+## Step 1: Add the Dependencies
+
+Add the two zio-bson modules to your `build.sbt` file. `zio-bson` holds the encoders, decoders and codecs. `zio-bson-magnolia` derives codecs for case classes automatically:
+
+```scala
+libraryDependencies += "dev.zio" %% "zio-bson" % "@VERSION@"
+libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
+```
+
+The MongoDB driver is a separate library. You add it when you connect to a server, in Step 6.
+
+## Step 2: Define a Case Class and Its Codec
+
+We will store books. Each book has a title, a page count, and an optional subtitle. We need imports for the zio-bson types, the BSON document builders, and the derivation module:
+
+```scala mdoc:silent
+import zio.bson._
+import zio.bson.BsonBuilder._
+import zio.bson.magnolia._
+
+final case class Book(title: String, pages: Int, subtitle: Option[String])
+```
+
+To derive the codec, we put a `DeriveBsonCodec.derive` call in the companion object of `Book`. The compiler finds this codec wherever a `BsonEncoder[Book]` or `BsonDecoder[Book]` is needed:
+
+```scala mdoc:silent
+object Book {
+  implicit val codec: BsonCodec[Book] = DeriveBsonCodec.derive
+}
+```
+
+`DeriveBsonCodec.derive` reads the fields of `Book` and builds the encoder and decoder from them. We did not write any mapping code, and we will see the result in the next step.
+
+## Step 3: Encode a Book to a BSON Document
+
+When the driver stores a value, it first converts the value to BSON. We can do the same conversion ourselves with `toBsonValue`. We will create a book without a subtitle:
+
+```scala mdoc
+val dune = Book("Dune", 412, None)
+
+println(dune.toBsonValue)
+```
+
+The output has two keys, `title` and `pages`. The `subtitle` field is missing, because it is `None` and the default configuration leaves out empty optional fields. The key names match the field names of `Book`.
+
+Now we create a book with a subtitle, and see that the key appears:
+
+```scala mdoc
+val hobbit = Book("The Hobbit", 310, Some("There and Back Again"))
+
+println(hobbit.toBsonValue)
+```
+
+## Step 4: Load a Document Back into a Book
+
+Loading is the reverse of storing. The `as` method reads a `BsonValue` with the decoder for `Book`, and returns either the value or an error message:
+
+```scala mdoc
+println(hobbit.toBsonValue.as[Book])
+```
+
+The result is `Right` with a `Book` that equals the original. Now we read a document that is missing the `pages` field, which is required:
+
+```scala mdoc
+println(doc("title" -> str("Emma")).as[Book])
+```
+
+The error names the missing field with a leading dot, `.pages`, so we can see what to fix in the stored document.
+
+## Step 5: Check the Round Trip
+
+A good habit is to check that a value survives a round trip: encode it, decode it, and compare the result with the original. We will check both books from Step 3:
+
+```scala mdoc
+val roundTrip = List(dune, hobbit).map(b => b.toBsonValue.as[Book])
+
+println(roundTrip)
+println(roundTrip == List(Right(dune), Right(hobbit)))
+```
+
+The second line prints `true`, so both books came back unchanged.
+
+## Step 6: Connect the Codec to MongoDB
+
+The MongoDB driver stores values through a `CodecRegistry`. A registry holds a `CodecProvider` for each type. The provider returned by `zioBsonCodecProvider` wraps the `Book` codec:
+
+```scala mdoc:silent
+import org.bson.codecs.configuration.CodecRegistries
+import org.bson.conversions.Bson
+
+val registry = CodecRegistries.fromRegistries(
+  CodecRegistries.fromProviders(zioBsonCodecProvider[Book]),
+  Bson.DEFAULT_CODEC_REGISTRY
+)
+```
+
+With the registry in the driver's client settings, `insertOne` and `find` work on `Book` values. The driver writes the same document that we printed in Step 3. The driver code needs a running MongoDB server and the synchronous driver library, so it is shown as text:
+
+```scala
+val settings = MongoClientSettings.builder()
+  .applyConnectionString(new ConnectionString("mongodb://localhost:27017"))
+  .codecRegistry(registry)
+  .build()
+
+val collection = MongoClients.create(settings)
+  .getDatabase("library")
+  .getCollection("books", classOf[Book])
+
+collection.insertOne(dune)
+println(collection.find().first())
+```
+
+The [MongoDB driver how-to](./how-to-use-with-mongodb-driver.md) explains the registry in more detail and shows the same encode and decode steps that run without a server.
+
+## Putting It Together
+
+The complete example below holds the model, the codec, and the checks from Steps 2 to 5 in one place:
+
+```scala mdoc
+final case class Shelf(name: String, books: List[Book])
+
+object Shelf {
+  implicit val codec: BsonCodec[Shelf] = DeriveBsonCodec.derive
+}
+
+val shelf = Shelf("Science Fiction", List(dune, hobbit))
+
+val stored = shelf.toBsonValue
+println(stored)
+println(stored.as[Shelf] == Right(shelf))
+```
+
+We derived a codec for `Shelf`, which holds a list of `Book` values. The codec for `Book` is used for each element, so no extra code is needed.
+
+## Next Steps
+
+- [Customize Field Names and Discriminators](./how-to-customize-field-names-and-discriminators.md) changes the keys in the stored document.
+- [Write a Codec by Hand](./how-to-write-a-codec-by-hand.md) covers types that derivation cannot handle.
+- [BsonCodecConfiguration](./bson-codec-configuration.md) lists every setting that controls derivation.
