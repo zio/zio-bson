@@ -6,7 +6,7 @@
 
 [ZIO Bson](https://github.com/zio/zio-bson) is BSON library with tight ZIO integration.
 
-[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-bson/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-bson_2.13.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-bson_2.13/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-bson_2.13.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-bson_2.13/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-bson-docs_2.13/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-bson-docs_2.13) [![ZIO Bson](https://img.shields.io/github/stars/zio/zio-bson?style=social)](https://github.com/zio/zio-bson)
+[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-bson/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/maven-central/v/dev.zio/zio-bson_2.13.svg?label=Sonatype%20Release)](https://central.sonatype.com/artifact/dev.zio/zio-bson_2.13) [![Sonatype Snapshots](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fdev%2Fzio%2Fzio-bson_2.13%2Fmaven-metadata.xml&label=Sonatype%20Snapshot)](https://central.sonatype.com/repository/maven-snapshots/dev/zio/zio-bson_2.13/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-bson_2.13/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-bson_2.13) [![ZIO Bson](https://img.shields.io/github/stars/zio/zio-bson?style=social)](https://github.com/zio/zio-bson)
 
 ## Introduction
 
@@ -22,15 +22,28 @@ The goal of this project is to create the best all-round BSON library for Scala:
 
 In order to use this library, we need to add the following lines in our `build.sbt` file:
 
-```scala
+```sbt
 libraryDependencies += "dev.zio" %% "zio-bson" % "1.0.11"
 libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "1.0.11"
 ```
 
+## Choosing a Module
+
+The `zio-bson` module holds the encoders, decoders, codecs, and syntax. It is published for `scala` `2.12`, `2.13` and `3`.
+
+The `zio-bson-magnolia` module adds automatic derivation of codecs for case classes and sealed traits with `DeriveBsonCodec.derive`. It is published for `scala` `2.13` and `3`.
+
+If you only write codecs by hand, `zio-bson` is enough. Add `zio-bson-magnolia` when you want derivation.
+
 ## zio-schema support
 
-`zio-bson-magnolia` projects provides typeclass derivation only for `scala` `2.13`.
-You can use [zio-schema-bson](https://github.com/zio/zio-schema/) instead to get typeclass derivation on `scala` `2.12`, `2.13` and `3`.
+If you already define your types with [zio-schema](https://github.com/zio/zio-schema/), the `zio-schema-bson` module of that project gives you BSON codecs derived from the schema. That module depends on `zio-bson`, so the types stay the same.
+
+## Learning Path
+
+- [Tutorial: Store and Load a Case Class with MongoDB](docs/./tutorial-store-and-load.md) walks through a complete example from start to finish.
+- [How-to Guides](docs/./how-to-use-with-mongodb-driver.md) answer one task each, such as renaming fields or writing a codec by hand.
+- [Reference](docs/./bson-encoder.md) pages describe every public type, with the [type mappings](docs/./types.md) and [errors](docs/./bson-errors.md).
 
 ## Example
 
@@ -84,6 +97,8 @@ But you can parse `BsonValue` any way:
 
 ```scala
 import BsonBuilder._
+
+import org.bson._
 
 val bsonVal: BsonValue = doc("curvature" -> double(0.2))
 

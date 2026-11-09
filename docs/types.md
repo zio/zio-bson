@@ -60,10 +60,11 @@ The decoder accepts the primary type and, where it makes sense, additional fallb
 - **`Byte` and `Short`** are decoded via the `Int` decoder followed by a range check using `validateIntRange`. All BSON numeric types and `STRING` are accepted, but the decoded value must fit within the type's range, otherwise a decoder error is returned.
 - **`BigInt` and `java.math.BigInteger`** encode to `STRING` but decode from all numeric BSON types. Conversion from `DOUBLE` and `DECIMAL128` requires the value to be a lossless integer (no fractional part).
 - **`String`** decoder also accepts `SYMBOL` for backward compatibility with legacy BSON documents.
-- **`Char`** decoder requires the string to be exactly one character long.
-- **`OffsetDateTime`** and **`OffsetTime`** encode as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `offset` (`STRING`).
-- **`ZonedDateTime`** encodes as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `zone_id` (`STRING`).
-- **`Option[A]`** encodes `None` as `NULL` and `Some(a)` using the encoder for `A`. The decoder returns `None` for `NULL` and `Some(a)` for any value accepted by the decoder for `A`.
+- **`Char`** decoder requires the string to be exactly one UTF-16 code unit. A character outside the Basic Multilingual Plane, such as an emoji, is stored as two code units and is rejected.
+- **`OffsetDateTime`** and **`OffsetTime`** encode as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `offset` (`STRING`). The decoder rejects any other field in the document.
+- **`ZonedDateTime`** encodes as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `zone_id` (`STRING`). The decoder rejects any other field in the document.
+- **`Option[A]`** encodes `None` as `NULL` and `Some(a)` using the encoder for `A`. The decoder returns `None` for `NULL` and `Some(a)` for any value accepted by the decoder for `A`. When a field is missing from a document, the decoder also returns `None`.
+- **`Map[K, V]`** needs a field codec for `K`. Only `String`, `Int` and `Long` keys have one built in. Other key types need a custom `BsonFieldEncoder` and `BsonFieldDecoder`, as described in [Field Codecs](./bson-field-codecs.md). A `None` value in a map is written as `NULL`, not skipped.
 
 ## BSON Types Without Scala Mappings
 

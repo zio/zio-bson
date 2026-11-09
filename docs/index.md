@@ -22,21 +22,34 @@ The goal of this project is to create the best all-round BSON library for Scala:
 
 In order to use this library, we need to add the following lines in our `build.sbt` file:
 
-```scala
+```sbt
 libraryDependencies += "dev.zio" %% "zio-bson" % "@VERSION@"
 libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
 ```
 
+## Choosing a Module
+
+The `zio-bson` module holds the encoders, decoders, codecs, and syntax. It is published for `scala` `2.12`, `2.13` and `3`.
+
+The `zio-bson-magnolia` module adds automatic derivation of codecs for case classes and sealed traits with `DeriveBsonCodec.derive`. It is published for `scala` `2.13` and `3`.
+
+If you only write codecs by hand, `zio-bson` is enough. Add `zio-bson-magnolia` when you want derivation.
+
 ## zio-schema support
 
-`zio-bson-magnolia` projects provides typeclass derivation only for `scala` `2.13`.
-You can use [zio-schema-bson](https://github.com/zio/zio-schema/) instead to get typeclass derivation on `scala` `2.12`, `2.13` and `3`.
+If you already define your types with [zio-schema](https://github.com/zio/zio-schema/), the `zio-schema-bson` module of that project gives you BSON codecs derived from the schema. That module depends on `zio-bson`, so the types stay the same.
+
+## Learning Path
+
+- [Tutorial: Store and Load a Case Class with MongoDB](./tutorial-store-and-load.md) walks through a complete example from start to finish.
+- [How-to Guides](./how-to-use-with-mongodb-driver.md) answer one task each, such as renaming fields or writing a codec by hand.
+- [Reference](./bson-encoder.md) pages describe every public type, with the [type mappings](./types.md) and [errors](./bson-errors.md).
 
 ## Example
 
 All the following code snippets assume that the following imports have been declared
 
-```scala
+```scala mdoc:silent
 import zio.bson._
 import zio.bson.BsonBuilder._
 ```
@@ -45,7 +58,7 @@ import zio.bson.BsonBuilder._
 
 Use `DeriveBsonCodec.derive` to get a codec for your case class or sealed trait:
 
-```scala
+```scala mdoc:silent
 import zio.bson.magnolia._
 
 case class Banana(curvature: Double)
@@ -59,7 +72,7 @@ object Banana {
 
 To use values in `Filter` of `Update` expressions you can convert them to `BsonValue` this way:
 
-```scala
+```scala mdoc:compile-only
 "str".toBsonValue
 
 Banana(0.2).toBsonValue
@@ -73,7 +86,7 @@ def method[T: BsonEncoder](value: T): BsonDocument = doc("key" -> value.toBsonVa
 
 To get `CodecProvider` for your `BsonCodec` use `zioBsonCodecProvider`:
 
-```scala
+```scala mdoc:compile-only
 val codecProvider = zioBsonCodecProvider[Banana]
 ```
 
@@ -82,8 +95,10 @@ val codecProvider = zioBsonCodecProvider[Banana]
 In general `CodecProvider` should parse your case class without intermediate `BsonValue` representation.
 But you can parse `BsonValue` any way:
 
-```scala
+```scala mdoc:compile-only
 import BsonBuilder._
+
+import org.bson._
 
 val bsonVal: BsonValue = doc("curvature" -> double(0.2))
 
