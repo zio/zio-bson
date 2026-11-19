@@ -18,17 +18,25 @@ const sidebars = {
         "types"
       ]
     },
-    "tutorial-store-and-load",
+    {
+      type: "category",
+      label: "Tutorials",
+      collapsed: true,
+      items: ["tutorial-store-and-load", "tutorial-model-with-sealed-traits"]
+    },
     {
       type: "category",
       label: "How-to Guides",
       collapsed: true,
       items: [
         "how-to-customize-field-names-and-discriminators",
+        "how-to-handle-optional-fields-and-defaults",
+        "how-to-store-dates-and-decimals",
         "how-to-write-a-codec-by-hand",
         "how-to-use-with-mongodb-driver"
       ]
-    }
+    },
+    "resources"
   ]
 };
 
