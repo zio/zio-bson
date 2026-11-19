@@ -21,7 +21,8 @@ const sidebars = {
     {
       type: "category",
       label: "Tutorials",
-      collapsed: true,
+      collapsible: false,
+      collapsed: false,
       items: ["tutorial-store-and-load", "tutorial-model-with-sealed-traits"]
     },
     {
