@@ -24,10 +24,10 @@ To use ZIO BSON, add the following to the `build.sbt` file. The core module is p
 
 ```sbt
 libraryDependencies ++= Seq(
-  // Encoders, decoders, codecs and syntax (Scala 2.12, 2.13, 3; JVM)
+  // Encoders, decoders, codecs and syntax (JVM)
   "dev.zio" %% "zio-bson"          % "@VERSION@",
 
-  // Automatic derivation of codecs for case classes and sealed traits (Scala 2.13, 3; JVM)
+  // Automatic derivation of codecs for case classes and sealed traits (JVM)
   "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
 )
 ```
