@@ -11,6 +11,8 @@ const sidebars = {
         "bson-decoder",
         "bson-codec",
         "bson-codec-configuration",
+        "bson-derivation",
+        "bson-builder",
         "bson-field-codecs",
         "bson-errors",
         "types"

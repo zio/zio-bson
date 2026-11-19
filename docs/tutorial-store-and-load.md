@@ -8,7 +8,7 @@ sidebar_label: "Store and Load a Case Class"
 
 In this tutorial, we will define a case class, derive a BSON codec for it, and see the exact document that MongoDB would store. Then we will load that document back into a Scala value. At the end, we will connect the codec to the MongoDB driver.
 
-By the end of this tutorial, you will know how to write a codec for your own types, how the fields of a case class become BSON keys, and how to check that a stored document reads back correctly. You do not need a MongoDB server to follow the steps. The driver step is shown as text, because it needs a running server.
+By the end of this tutorial, you will know how to derive a codec for your own types, how the fields of a case class become BSON keys, and how to check that a stored document reads back correctly. You do not need a MongoDB server to follow the steps. The driver step is shown as text, because it needs a running server.
 
 ## Step 1: Add the Dependencies
 

@@ -26,17 +26,17 @@ The decoder accepts the primary type and, where it makes sense, additional fallb
 | `String` | `STRING` | `SYMBOL` |
 | `Char` | `STRING` | `SYMBOL` |
 | `scala.Symbol` | `STRING` | `SYMBOL` |
-| `UUID` | `STRING` | — |
-| `java.util.Currency` | `STRING` | — |
-| `DayOfWeek` | `STRING` | — |
-| `Month` | `STRING` | — |
-| `MonthDay` | `STRING` | — |
+| `UUID` | `STRING` | `SYMBOL` |
+| `java.util.Currency` | `STRING` | `SYMBOL` |
+| `DayOfWeek` | `STRING` | `SYMBOL` |
+| `Month` | `STRING` | `SYMBOL` |
+| `MonthDay` | `STRING` | `SYMBOL` |
 | `Year` | `INT32` | `INT64` (range check), `DOUBLE` (lossless), `DECIMAL128` (lossless), `STRING` |
-| `YearMonth` | `STRING` | — |
-| `ZoneId` | `STRING` | — |
-| `ZoneOffset` | `STRING` | — |
-| `Duration` | `STRING` | — |
-| `Period` | `STRING` | — |
+| `YearMonth` | `STRING` | `SYMBOL` |
+| `ZoneId` | `STRING` | `SYMBOL` |
+| `ZoneOffset` | `STRING` | `SYMBOL` |
+| `Duration` | `STRING` | `SYMBOL` |
+| `Period` | `STRING` | `SYMBOL` |
 | `Instant` | `DATE_TIME` | — |
 | `LocalDate` | `DATE_TIME` | — |
 | `LocalDateTime` | `DATE_TIME` | — |
@@ -57,9 +57,10 @@ The decoder accepts the primary type and, where it makes sense, additional fallb
 
 ## Special Cases
 
-- **`Byte` and `Short`** are decoded via the `Int` decoder followed by a range check using `validateIntRange`. All BSON numeric types and `STRING` are accepted, but the decoded value must fit within the type's range, otherwise a decoder error is returned.
+- **`Byte` and `Short`** are decoded via the `Int` decoder followed by a range check. All BSON numeric types and `STRING` are accepted, but the decoded value must fit within the type's range, otherwise a decoder error is returned.
 - **`BigInt` and `java.math.BigInteger`** encode to `STRING` but decode from all numeric BSON types. Conversion from `DOUBLE` and `DECIMAL128` requires the value to be a lossless integer (no fractional part).
-- **`String`** decoder also accepts `SYMBOL` for backward compatibility with legacy BSON documents.
+- **`String`** decoder also accepts `SYMBOL` for backward compatibility with legacy BSON documents. Every type that decodes through the `String` decoder (`Char`, `Symbol`, `UUID`, `Currency`, `DayOfWeek`, `Month`, `MonthDay`, `YearMonth`, `ZoneId`, `ZoneOffset`, `Duration`, `Period`) accepts `SYMBOL` as well. `DayOfWeek` and `Month` decode case-insensitively.
+- **`Instant`, `LocalDate`, `LocalDateTime` and `LocalTime`** are stored as `DATE_TIME`, which has millisecond precision. Sub-millisecond precision is lost when encoding, and the date and time are interpreted in UTC.
 - **`Char`** decoder requires the string to be exactly one UTF-16 code unit. A character outside the Basic Multilingual Plane, such as an emoji, is stored as two code units and is rejected.
 - **`OffsetDateTime`** and **`OffsetTime`** encode as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `offset` (`STRING`). The decoder rejects any other field in the document.
 - **`ZonedDateTime`** encodes as a `DOCUMENT` with two fields: `date_time` (`DATE_TIME`) and `zone_id` (`STRING`). The decoder rejects any other field in the document.

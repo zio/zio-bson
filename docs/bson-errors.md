@@ -13,10 +13,10 @@ When decoding fails, ZIO Bson reports the reason and the location of the failing
 Every decoding failure is a `BsonDecoder.Error`, a case class with two fields:
 
 ```scala
-final case class Error(trace: List[BsonTrace], message: String) extends RuntimeException
+final case class Error(trace: List[BsonTrace], message: String) extends RuntimeException with NoStackTrace
 ```
 
-`trace` lists the steps from the root to the failing value, with the most recent step first. `message` describes the problem. The `render` method joins both into one string in the form `<path>: <message>`.
+`trace` lists the steps from the root to the failing value, with the most recent step first. `message` describes the problem. The `render` method joins both into one string in the form `<path>: <message>`. The exception message itself is different: it reads `Path: <path>, error: <message>` and ends with a hint not to use the `Unsafe` methods. The error has no stack trace.
 
 Two entry points return errors in different forms:
 

@@ -15,7 +15,7 @@ Derivation is available from the `zio.bson.magnolia` package, which is the `zio-
 `BsonCodecConfiguration` is a case class with five fields. Each one has a default:
 
 ```scala
-final case class BsonCodecConfiguration(
+case class BsonCodecConfiguration(
   sumTypeHandling: BsonCodecConfiguration.SumTypeHandling = SumTypeHandling.WrapperWithClassNameField,
   skipNullsInCaseClass: Boolean = true,
   classNameMapping: String => String = identity,
@@ -38,7 +38,7 @@ Annotations on a field, subtype, or sealed trait always win over the configurati
 
 ## Providing a Configuration
 
-Derivation reads the configuration as an implicit value in the scope where `DeriveBsonCodec.derive` is written. The examples on this page use a small function that takes the configuration and derives the codec from it. This keeps the configuration out of the companion object, where it could clash with the default value:
+Derivation reads the configuration as an implicit value in the scope where `DeriveBsonCodec.derive` is written. The examples on this page use a small function that takes the configuration and derives the codec from it. Any implicit `BsonCodecConfiguration` in scope takes precedence over the default one, so the same configuration can also be an `implicit val` in the companion object. Writing it as a function keeps each example self-contained:
 
 ```scala mdoc:silent
 import zio.bson._
@@ -131,7 +131,7 @@ The output key is `square`. The name comes from the class name, so `Square` beco
 `sumTypeHandling` picks one of two encodings for sealed traits:
 
 - `SumTypeHandling.WrapperWithClassNameField` (the default) writes a document with one key, the subtype name, whose value holds the subtype's fields. For example, `{ Circle: { radius: 1.0 } }`.
-- `SumTypeHandling.DiscriminatorField(name)` writes the subtype fields in the same document as a string field called `name`. For example, `{ radius: 1.0, kind: "Circle" }` when `name` is `"kind"`.
+- `SumTypeHandling.DiscriminatorField(name)` writes the subtype fields in the same document as a string field called `name`. For example, `{ kind: "Circle", radius: 1.0 }` when `name` is `"kind"`.
 
 The next example uses a discriminator field called `kind`:
 
@@ -265,10 +265,11 @@ The decoder does not check the annotation. If a document does contain the exclud
 
 ## Scala 2 and Scala 3
 
-The annotations and configuration are the same in both versions. The only difference is how the configuration is declared as an implicit value. In Scala 2 it is an `implicit val`, and in Scala 3 it is a `given`.
+The annotations and configuration are the same in both versions. The configuration is declared as an `implicit val` in Scala 2 and as a `given` in Scala 3. The derivation entry points also differ, as described in [Derivation](./bson-derivation.md).
 
 ## Related Pages
 
+- [Derivation](./bson-derivation.md) describes the derivation entry points for Scala 2 and Scala 3.
 - [BsonCodec](./bson-codec.md) describes the value that derivation returns.
 - [Use zio-bson with the MongoDB Driver](./how-to-use-with-mongodb-driver.md) shows derivation in an application.
 - [Type Mappings](./types.md) lists the BSON type for each field type.
