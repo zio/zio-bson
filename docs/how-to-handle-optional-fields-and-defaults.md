@@ -24,6 +24,8 @@ object User {
 }
 ```
 
+To see what `User` writes and reads, encode a user without a nickname, then decode documents with the key missing and with `NULL`:
+
 ```scala mdoc
 println(User("Ada", None).toBsonValue)
 println(doc("name" -> str("Ada")).as[User])
@@ -41,6 +43,8 @@ object Settings {
   implicit val codec: BsonCodec[Settings] = DeriveBsonCodec.derive
 }
 ```
+
+To decode a document written before `pageSize` existed:
 
 ```scala mdoc
 doc("theme" -> str("dark")).as[Settings]
@@ -66,6 +70,8 @@ object Profile {
   implicit val codec: BsonCodec[Profile] = DeriveBsonCodec.derive
 }
 ```
+
+With the setting turned off, `None` is written as `NULL`:
 
 ```scala mdoc
 println(Profile("Ada", None).toBsonValue)

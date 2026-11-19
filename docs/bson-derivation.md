@@ -49,7 +49,7 @@ object DeriveBsonCodec {
 
 ## DeriveBsonEncoder and DeriveBsonDecoder
 
-To derive only one direction, use `DeriveBsonEncoder` or `DeriveBsonDecoder`. The method name differs: Scala 2 calls it `derive` and Scala 3 calls it `derived`.
+To derive only one direction, use `DeriveBsonEncoder` or `DeriveBsonDecoder`. The method name differs: Scala 2 uses `DeriveBsonEncoder.derive` and `DeriveBsonDecoder.derive`, and Scala 3 uses `DeriveBsonEncoder.derived` and `DeriveBsonDecoder.derived`.
 
 <Tabs groupId="scala-version" defaultValue="scala2">
   <TabItem value="scala2" label="Scala 2">
@@ -85,10 +85,9 @@ The Scala 3 snippet is not compiled with the page, because the documentation is 
 
 ## Extension Points
 
-Both versions are built on [Magnolia](https://github.com/softwaremill/magnolia). Code that needs a custom derivation, for instance to change how a case class is written, can reuse the pieces:
+Both versions are built on [Magnolia](https://github.com/softwaremill/magnolia). Code that needs a custom derivation, for instance to change how a case class is written, can reuse the pieces.
 
-- **Scala 2**: `DeriveBsonEncoder` and `DeriveBsonDecoder` are traits as well as objects. They declare `join` for case classes and `split` for sealed traits, each taking the implicit `BsonCodecConfiguration`, and the objects supply the `derive` macro.
-- **Scala 3**: `DeriveBsonEncoder.Derive` and `DeriveBsonDecoder.Derive` are classes that take a `BsonCodecConfiguration` and extend Magnolia's `AutoDerivation`. The `Codec` object inside each one has `join` and `split` methods that take the configuration as an explicit argument.
+In Scala 2, `DeriveBsonEncoder` and `DeriveBsonDecoder` are traits as well as objects. They declare `join` for case classes and `split` for sealed traits, each taking the implicit `BsonCodecConfiguration`, and the objects supply the `DeriveBsonEncoder.derive` and `DeriveBsonDecoder.derive` macros. In Scala 3, `DeriveBsonEncoder.Derive` and `DeriveBsonDecoder.Derive` are classes that take a `BsonCodecConfiguration` and extend Magnolia's `AutoDerivation`. The `DeriveBsonEncoder.Codec` and `DeriveBsonDecoder.Codec` objects have `join` and `split` methods that take the configuration as an explicit argument.
 
 These are advanced APIs. To change the output of derived codecs, prefer the [annotations and configuration](./bson-codec-configuration.md).
 

@@ -4,7 +4,7 @@ title: "BsonBuilder"
 sidebar_label: "BsonBuilder"
 ---
 
-`BsonBuilder` is a small object of helpers that build `BsonValue` instances from Scala values. It is useful for writing MongoDB filters and updates by hand and for building the expected documents in tests. Each helper wraps one constructor of the MongoDB Java driver, so there is no encoding or codec involved.
+`BsonBuilder` is a small object of helpers that build `BsonValue` instances from Scala values. It is useful for writing MongoDB filters and updates by hand and for building the expected documents in tests. Except for `BsonBuilder.date`, which uses the `Instant` encoder, each helper wraps one constructor of the MongoDB Java driver, so no encoding or codec is involved.
 
 To bring the helpers into scope:
 
