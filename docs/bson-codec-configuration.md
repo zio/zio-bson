@@ -131,7 +131,7 @@ The output key is `square`. The name comes from the class name, so `Square` beco
 `sumTypeHandling` picks one of two encodings for sealed traits:
 
 - `SumTypeHandling.WrapperWithClassNameField` (the default) writes a document with one key, the subtype name, whose value holds the subtype's fields. For example, `{ Circle: { radius: 1.0 } }`.
-- `SumTypeHandling.DiscriminatorField(name)` writes the subtype fields in the same document as a string field called `name`. For example, `{ kind: "Circle", radius: 1.0 }` when `name` is `"kind"`.
+- `SumTypeHandling.DiscriminatorField(name)` writes the subtype fields in the same document as a string field called `name`. For example, `{ radius: 1.0, kind: "Circle" }` when `name` is `"kind"`.
 
 The next example uses a discriminator field called `kind`:
 

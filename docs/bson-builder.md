@@ -49,7 +49,7 @@ val order = doc(
 
 ## Numbers
 
-`BsonBuilder.int` writes `INT32`, `BsonBuilder.long` writes `INT64`, and `BsonBuilder.double` writes `DOUBLE`. The type matters when reading: the [type mappings](./types.md) list which numeric BSON types each Scala type accepts.
+`BsonBuilder.int` writes `INT32`, `BsonBuilder.long` writes `INT64`, and `BsonBuilder.double` writes `DOUBLE`. Decoders accept several numeric BSON types, as the [type mappings](./types.md) list. An `Int` decoder reads all three values below, because each one is a whole number that fits:
 
 ```scala mdoc
 doc("a" -> int(1), "b" -> long(1L), "c" -> double(1.0)).as[Map[String, Int]]
