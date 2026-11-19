@@ -120,6 +120,30 @@ The `render` method combines both into one string. See [Errors and BsonTrace](./
 
 The `BsonDecoder` companion object has a decoder for every type listed in [BsonEncoder](./bson-encoder.md), with the same set of accepted BSON types per type. Each one is documented in [Type Mappings](./types.md).
 
+## Decoder Context and Helpers
+
+You rarely need these directly; they matter when writing a decoder with `decodeUnsafe` and `fromBsonValueUnsafe` instead of wrapping an existing one with `BsonDecoder#map` or `BsonDecoder#mapOrFail`.
+
+`BsonDecoder.BsonDecoderContext` carries the state that a decoder passes down to nested decoders. Its only field, `ignoreExtraField`, names one field that the enclosing derived decoder must not report as unexpected. Derived decoders use it to skip the discriminator field when `bsonNoExtraFields` is active. `BsonDecoder.BsonDecoderContext.default` is the empty context that `BsonDecoder#decode` and `BsonDecoder#fromBsonValue` start with:
+
+```scala
+object BsonDecoder {
+  case class BsonDecoderContext(ignoreExtraField: Option[String] = None)
+}
+```
+
+The `DecoderUtils` object in the `zio.bson` package has three helpers for failing with the right trace:
+
+```scala
+object DecoderUtils {
+  def unsafeCall[R](trace: List[BsonTrace])(call: => R): R
+  def throwInvalidType(trace: List[BsonTrace], expected: BsonType, actual: BsonType): Nothing
+  def assumeType[T](trace: List[BsonTrace])(tpe: BsonType, value: BsonValue)(f: BsonValue => T): T
+}
+```
+
+`DecoderUtils.unsafeCall` runs a reader call and turns a driver `BsonInvalidOperationException` or `IllegalStateException` into a `BsonDecoder.Error` with the given trace. `DecoderUtils.throwInvalidType` throws the `Expected BSON type X, but got Y.` error. `DecoderUtils.assumeType` checks the BSON type of a value before running a conversion.
+
 ## Related Pages
 
 - [BsonEncoder](./bson-encoder.md) writes values.

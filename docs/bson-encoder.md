@@ -25,7 +25,7 @@ trait BsonEncoder[A] {
 
 `encode` writes the value to a `BsonWriter`. `toBsonValue` builds a `BsonValue` directly. `isAbsent` tells the caller that a value can be left out of a document, and it returns `false` by default. `contramap` builds an encoder for a new type `B` by converting each `B` to an `A` first.
 
-`EncoderContext` is a small case class with one flag, `inlineNextObject`. The derived encoders use it to avoid writing an extra document wrapper for a sum-type discriminator. You do not need to set it yourself.
+`EncoderContext` is a small case class with one flag, `inlineNextObject`. The derived encoders use it to avoid writing an extra document wrapper for a sum-type discriminator. `BsonEncoder.EncoderContext.default` has the flag off. It is the context to pass when calling `BsonEncoder#encode` directly, as the MongoDB driver integration does.
 
 ## Encoding a Value to a BsonValue
 
