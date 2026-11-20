@@ -23,13 +23,11 @@ The goal of this project is to create the best all-round BSON library for Scala:
 To use ZIO BSON, add the following to the `build.sbt` file. The core module is published for Scala 2.12, 2.13 and 3, and the derivation module for Scala 2.13 and 3:
 
 ```sbt
-libraryDependencies ++= Seq(
-  // Encoders, decoders, codecs and syntax (JVM)
-  "dev.zio" %% "zio-bson"          % "@VERSION@",
+// Encoders, decoders, codecs and syntax (JVM)
+libraryDependencies += "dev.zio" %% "zio-bson" % "@VERSION@"
 
-  // Automatic derivation of codecs for case classes and sealed traits (JVM)
-  "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
-)
+// Automatic derivation of codecs for case classes and sealed traits (JVM)
+libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
 ```
 
 If we only write codecs by hand, `zio-bson` is enough.

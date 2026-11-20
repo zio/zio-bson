@@ -15,7 +15,10 @@ By the end of this tutorial, you will know how to derive a codec for your own ty
 Add the two zio-bson modules to your `build.sbt` file. `zio-bson` holds the encoders, decoders and codecs. `zio-bson-magnolia` derives codecs for case classes automatically:
 
 ```scala
+// ZIO BSON: encoders, decoders and codecs (JVM)
 libraryDependencies += "dev.zio" %% "zio-bson" % "@VERSION@"
+
+// ZIO BSON magnolia: automatic codec derivation for case classes (JVM)
 libraryDependencies += "dev.zio" %% "zio-bson-magnolia" % "@VERSION@"
 ```
 
