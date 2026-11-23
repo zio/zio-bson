@@ -28,6 +28,7 @@ trait BsonFieldEncoder[-A] {
 
 /** The implicit field encoders for `String`, `Int` and `Long`, and the `apply` summoner. */
 object BsonFieldEncoder {
+
   /** Returns the implicit `BsonFieldEncoder[A]` in scope. */
   def apply[A](implicit a: BsonFieldEncoder[A]): BsonFieldEncoder[A] = a
 

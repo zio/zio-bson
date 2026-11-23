@@ -27,7 +27,8 @@ trait BsonFieldDecoder[+A] {
     }
 
   /**
-   * Returns a field decoder for `B` that decodes with this decoder and applies `f` to the result. When `f` returns a `Left`, the decoding throws a [[BsonDecoder.Error]] with that message at `trace`.
+   * Returns a field decoder for `B` that decodes with this decoder and applies `f` to the result. When `f` returns a
+   * `Left`, the decoding throws a [[BsonDecoder.Error]] with that message at `trace`.
    */
   final def mapOrFail[B](f: A => Either[String, B]): BsonFieldDecoder[B] =
     new BsonFieldDecoder[B] {
@@ -48,17 +49,20 @@ trait BsonFieldDecoder[+A] {
 
 /** The implicit field decoders for `String`, `Int` and `Long`, and the `apply` summoner. */
 object BsonFieldDecoder {
+
   /** Returns the implicit `BsonFieldDecoder[A]` in scope. */
   def apply[A](implicit a: BsonFieldDecoder[A]): BsonFieldDecoder[A] = a
 
   /** Uses the field name as a `String` key. */
   implicit val string: BsonFieldDecoder[String] = new BsonFieldDecoder[String] {
+
     /** Returns the field name unchanged. */
     def unsafeDecodeField(trace: List[BsonTrace], in: String): String = in
   }
 
   /**
-   * Parses the field name as an `Int`. A name that is not an `Int` fails with a message such as `Invalid Int: 'x': java.lang.NumberFormatException: For input string: "x"`.
+   * Parses the field name as an `Int`. A name that is not an `Int` fails with a message such as
+   * `Invalid Int: 'x': java.lang.NumberFormatException: For input string: "x"`.
    */
   implicit val int: BsonFieldDecoder[Int] =
     string.mapOrFail { str =>
@@ -69,7 +73,8 @@ object BsonFieldDecoder {
     }
 
   /**
-   * Parses the field name as a `Long`. A name that is not a `Long` fails with a message such as `Invalid Long: 'x': java.lang.NumberFormatException: For input string: "x"`.
+   * Parses the field name as a `Long`. A name that is not a `Long` fails with a message such as
+   * `Invalid Long: 'x': java.lang.NumberFormatException: For input string: "x"`.
    */
   implicit val long: BsonFieldDecoder[Long] =
     string.mapOrFail { str =>

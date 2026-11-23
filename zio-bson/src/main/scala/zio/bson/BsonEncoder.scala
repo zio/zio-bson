@@ -50,7 +50,8 @@ import scala.jdk.CollectionConverters._
  * // BsonInt64{value=42}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 trait BsonEncoder[A] { self =>
 
@@ -126,15 +127,17 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   /**
    * State that an encoder passes down to the encoders of nested values.
    *
-   * @param inlineNextObject when `true`, the next case class encoder that runs, which is the one the derivation in
-   * `zio-bson-magnolia` creates, writes its fields into the document that is already open instead of opening a new one.
-   * The derived encoders for sum types use it to place a discriminator field next to the fields of the chosen subtype.
-   * Encoders written by hand don't read it.
+   * @param inlineNextObject
+   *   when `true`, the next case class encoder that runs, which is the one the derivation in `zio-bson-magnolia`
+   *   creates, writes its fields into the document that is already open instead of opening a new one. The derived
+   *   encoders for sum types use it to place a discriminator field next to the fields of the chosen subtype. Encoders
+   *   written by hand don't read it.
    */
   case class EncoderContext(inlineNextObject: Boolean = false)
 
   /** The companion of [[BsonEncoder.EncoderContext]]. */
   object EncoderContext {
+
     /** The context with `inlineNextObject` set to `false`. */
     val default: EncoderContext = EncoderContext()
   }
@@ -176,24 +179,31 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   }
 
   /** Encodes a `java.time.DayOfWeek` as a BSON string holding its name, for example `"MONDAY"`. */
-  implicit val dayOfWeek: BsonEncoder[DayOfWeek]   = string.contramap(_.toString)
+  implicit val dayOfWeek: BsonEncoder[DayOfWeek] = string.contramap(_.toString)
+
   /** Encodes a `java.time.Month` as a BSON string holding its name, for example `"MAY"`. */
-  implicit val month: BsonEncoder[Month]           = string.contramap(_.toString)
+  implicit val month: BsonEncoder[Month] = string.contramap(_.toString)
+
   /** Encodes a `java.time.MonthDay` as a BSON string in its ISO-8601 form, for example `"--12-03"`. */
-  implicit val monthDay: BsonEncoder[MonthDay]     = string.contramap(_.toString)
+  implicit val monthDay: BsonEncoder[MonthDay] = string.contramap(_.toString)
+
   /** Encodes a `java.time.Year` as a BSON 32-bit integer holding the year. */
-  implicit val year: BsonEncoder[Year]             = int.contramap(_.getValue)
+  implicit val year: BsonEncoder[Year] = int.contramap(_.getValue)
+
   /** Encodes a `java.time.YearMonth` as a BSON string in its ISO-8601 form, for example `"2024-05"`. */
-  implicit val yearMonth: BsonEncoder[YearMonth]   = string.contramap(_.toString)
+  implicit val yearMonth: BsonEncoder[YearMonth] = string.contramap(_.toString)
+
   /** Encodes a `java.time.ZoneId` as a BSON string holding its id, for example `"Europe/Paris"`. */
-  implicit val zoneId: BsonEncoder[ZoneId]         = string.contramap(_.getId)
+  implicit val zoneId: BsonEncoder[ZoneId] = string.contramap(_.getId)
+
   /** Encodes a `java.time.ZoneOffset` as a BSON string, for example `"+02:00"`. */
   implicit val zoneOffset: BsonEncoder[ZoneOffset] = string.contramap(_.toString)
 
   /** Encodes a `java.time.Duration` as a BSON string in its ISO-8601 form, for example `"PT1H30M"`. */
   implicit val duration: BsonEncoder[Duration] = string.contramap(_.toString)
+
   /** Encodes a `java.time.Period` as a BSON string in its ISO-8601 form, for example `"P1Y2M"`. */
-  implicit val period: BsonEncoder[Period]     = string.contramap(_.toString)
+  implicit val period: BsonEncoder[Period] = string.contramap(_.toString)
 
   /**
    * Encodes a `java.time.Instant` as a BSON date-time holding the milliseconds since the epoch.
@@ -209,11 +219,13 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   }
 
   /** Encodes a `java.time.LocalDate` as a BSON date-time at the start of that day in UTC. */
-  implicit val localDate: BsonEncoder[LocalDate]         = instant.contramap(_.atStartOfDay(ZoneOffset.UTC).toInstant)
+  implicit val localDate: BsonEncoder[LocalDate] = instant.contramap(_.atStartOfDay(ZoneOffset.UTC).toInstant)
+
   /** Encodes a `java.time.LocalDateTime` as a BSON date-time, reading the value as UTC. */
   implicit val localDateTime: BsonEncoder[LocalDateTime] = instant.contramap(_.toInstant(ZoneOffset.UTC))
+
   /** Encodes a `java.time.LocalTime` as a BSON date-time on 1970-01-01 in UTC. */
-  implicit val localTime: BsonEncoder[LocalTime]         =
+  implicit val localTime: BsonEncoder[LocalTime] =
     instant.contramap(_.atDate(LocalDate.ofEpochDay(0L)).toInstant(ZoneOffset.UTC))
 
   private def locationDateTime[T](toInstant: T => Instant, toLocation: T => String, locationField: String) =
@@ -240,8 +252,8 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
     }
 
   /**
-   * Encodes a `java.time.OffsetDateTime` as a BSON document with two fields: `date_time`, a BSON date-time of the instant,
-   * and `offset`, a string such as `"+02:00"`.
+   * Encodes a `java.time.OffsetDateTime` as a BSON document with two fields: `date_time`, a BSON date-time of the
+   * instant, and `offset`, a string such as `"+02:00"`.
    *
    * {{{
    * import java.time.OffsetDateTime
@@ -253,16 +265,19 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
    */
   implicit val offsetDateTime: BsonEncoder[OffsetDateTime] =
     locationDateTime[OffsetDateTime](_.toInstant, _.getOffset.toString, "offset")
+
   /**
-   * Encodes a `java.time.OffsetTime` like an `OffsetDateTime` on 1970-01-01: a document with `date_time` and `offset` fields.
+   * Encodes a `java.time.OffsetTime` like an `OffsetDateTime` on 1970-01-01: a document with `date_time` and `offset`
+   * fields.
    */
-  implicit val offsetTime: BsonEncoder[OffsetTime]         =
+  implicit val offsetTime: BsonEncoder[OffsetTime] =
     offsetDateTime.contramap(_.atDate(LocalDate.ofEpochDay(0L)))
+
   /**
-   * Encodes a `java.time.ZonedDateTime` as a BSON document with two fields: `date_time`, a BSON date-time of the instant,
-   * and `zone_id`, the zone id as a string such as `"Europe/Paris"`.
+   * Encodes a `java.time.ZonedDateTime` as a BSON document with two fields: `date_time`, a BSON date-time of the
+   * instant, and `zone_id`, the zone id as a string such as `"Europe/Paris"`.
    */
-  implicit val zonedDateTime: BsonEncoder[ZonedDateTime]   =
+  implicit val zonedDateTime: BsonEncoder[ZonedDateTime] =
     locationDateTime[ZonedDateTime](_.toInstant, _.getZone.getId, "zone_id")
 
   /** Encodes a `Char` as a BSON string of length one. */
@@ -312,12 +327,14 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
 
 /** Implicit encoders that are tried after those in the [[BsonEncoder]] companion. */
 trait LowPriorityBsonEncoder1 {
+
   /** Returns the encoder of the implicit [[BsonCodec]] for `A`. */
   implicit def fromCodec[A](implicit codec: BsonCodec[A]): BsonEncoder[A] = codec.encoder
 }
 
 /** Implicit encoders for the numeric types, mixed into the `BsonEncoder` companion. */
 trait NumberEncoders {
+
   /** Encodes an `Int` as a BSON 32-bit integer. */
   implicit val int: BsonEncoder[Int] = new BsonEncoder[Int] {
     def encode(writer: BsonWriter, value: Int, ctx: EncoderContext): Unit = writer.writeInt32(value)
@@ -326,7 +343,8 @@ trait NumberEncoders {
   }
 
   /** Encodes a `Byte` as a BSON 32-bit integer. */
-  implicit val byte: BsonEncoder[Byte]   = int.contramap(_.toInt)
+  implicit val byte: BsonEncoder[Byte] = int.contramap(_.toInt)
+
   /** Encodes a `Short` as a BSON 32-bit integer. */
   implicit val short: BsonEncoder[Short] = int.contramap(_.toInt)
 
@@ -366,7 +384,8 @@ trait NumberEncoders {
   implicit val bigDecimal: BsonEncoder[BigDecimal] = javaBigDecimal.contramap(_.underlying())
 
   /**
-   * Encodes a `scala.BigInt` as a BSON string of its decimal digits, so that values beyond the range of a `Long` are kept.
+   * Encodes a `scala.BigInt` as a BSON string of its decimal digits, so that values beyond the range of a `Long` are
+   * kept.
    */
   implicit val bigInt: BsonEncoder[BigInt] = new BsonEncoder[BigInt] {
 
@@ -382,6 +401,7 @@ trait NumberEncoders {
 
 /** Implicit encoders for byte collections and maps, mixed into the `BsonEncoder` companion. */
 trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
+
   /** Encodes an `Array[Byte]` as BSON binary data. */
   implicit val byteArray: BsonEncoder[Array[Byte]] = new BsonEncoder[Array[Byte]] {
 
@@ -398,8 +418,8 @@ trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
   implicit val byteNonEmptyChunk: BsonEncoder[NonEmptyChunk[Byte]] = byteArray.contramap[NonEmptyChunk[Byte]](_.toArray)
 
   /**
-   * Encodes a map as a BSON document. Each key is turned into a field name by the implicit [[BsonFieldEncoder]] for `K`,
-   * and each value is encoded with the encoder for `V`.
+   * Encodes a map as a BSON document. Each key is turned into a field name by the implicit [[BsonFieldEncoder]] for
+   * `K`, and each value is encoded with the encoder for `V`.
    *
    * Entries whose value is absent (see [[BsonEncoder#isAbsent]]), such as `None`, are written as BSON null.
    *
@@ -444,6 +464,7 @@ trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
 
 /** Implicit encoders for sequences and arrays, tried after the encoders in [[CollectionEncoders]]. */
 trait LowPriorityCollectionEncoders1 {
+
   /**
    * Encodes any `Iterable` of `A` as a BSON array, in the order of iteration.
    *
@@ -484,9 +505,9 @@ trait BsonValueEncoders {
   /**
    * Encodes any `org.bson.BsonValue` as itself. [[BsonEncoder#toBsonValue]] returns the value unchanged.
    *
-   * When writing to a `BsonWriter`, the value is written with the default codec of the MongoDB driver for its class. The
-   * call throws a `RuntimeException` with the message `Can't find codec for BsonValue subtype <class name>` when the
-   * driver has no default codec for that class.
+   * When writing to a `BsonWriter`, the value is written with the default codec of the MongoDB driver for its class.
+   * The call throws a `RuntimeException` with the message `Can't find codec for BsonValue subtype <class name>` when
+   * the driver has no default codec for that class.
    */
   implicit def bsonValueEncoder[T <: BsonValue]: BsonEncoder[T] = new BsonEncoder[T] {
 

@@ -6,8 +6,8 @@ import zio.bson.magnolia.BsonCodecConfiguration._
 import java.util.regex.Pattern
 
 /**
- * Settings for the codecs that the derivation in this package creates. The derivation takes the configuration as an implicit
- * parameter and finds [[BsonCodecConfiguration.default]] when none is in scope.
+ * Settings for the codecs that the derivation in this package creates. The derivation takes the configuration as an
+ * implicit parameter and finds [[BsonCodecConfiguration.default]] when none is in scope.
  *
  * {{{
  * import zio.bson._
@@ -26,18 +26,24 @@ import java.util.regex.Pattern
  * // {"first_name": "Ada"}
  * }}}
  *
- * @param sumTypeHandling how a sealed trait is written: as a wrapper document named after the subtype, which is the
- * default, or with a discriminator field. See [[BsonCodecConfiguration.SumTypeHandling]].
- * @param skipNullsInCaseClass when `true`, the default, an encoder leaves out a case class field whose encoder reports
- * the value as absent, which is `None` for an `Option` field. When `false`, such a field is written as BSON null.
- * @param classNameMapping changes the class name of a subtype of a sealed trait into the name that the document uses.
- * The default keeps the class name. A `bsonHint` annotation on the subtype takes priority.
- * @param fieldNameMapping changes the name of a case class field into the name that the document uses. The default
- * keeps the name. A `bsonField` annotation on the field takes priority.
- * @param allowExtraFields when `true`, the default, a decoder ignores document fields that the case class doesn't have.
- * When `false`, it fails with `Invalid extra field.`. The `bsonNoExtraFields` annotation turns this off for a single class.
+ * @param sumTypeHandling
+ *   how a sealed trait is written: as a wrapper document named after the subtype, which is the default, or with a
+ *   discriminator field. See [[BsonCodecConfiguration.SumTypeHandling]].
+ * @param skipNullsInCaseClass
+ *   when `true`, the default, an encoder leaves out a case class field whose encoder reports the value as absent, which
+ *   is `None` for an `Option` field. When `false`, such a field is written as BSON null.
+ * @param classNameMapping
+ *   changes the class name of a subtype of a sealed trait into the name that the document uses. The default keeps the
+ *   class name. A `bsonHint` annotation on the subtype takes priority.
+ * @param fieldNameMapping
+ *   changes the name of a case class field into the name that the document uses. The default keeps the name. A
+ *   `bsonField` annotation on the field takes priority.
+ * @param allowExtraFields
+ *   when `true`, the default, a decoder ignores document fields that the case class doesn't have. When `false`, it
+ *   fails with `Invalid extra field.`. The `bsonNoExtraFields` annotation turns this off for a single class.
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 case class BsonCodecConfiguration(
   sumTypeHandling: SumTypeHandling = WrapperWithClassNameField,
@@ -49,6 +55,7 @@ case class BsonCodecConfiguration(
 
 /** The companion of [[BsonCodecConfiguration]]: the default configuration and the name mappings that it can use. */
 object BsonCodecConfiguration {
+
   /** The configuration with the default value of every setting. */
   implicit val default: BsonCodecConfiguration = BsonCodecConfiguration()
 
@@ -56,8 +63,9 @@ object BsonCodecConfiguration {
   type TermMapping = String => String
 
   /**
-   * How the derivation writes and reads a sealed trait. Use [[BsonCodecConfiguration.SumTypeHandling.WrapperWithClassNameField]]
-   * or [[BsonCodecConfiguration.SumTypeHandling.DiscriminatorField]].
+   * How the derivation writes and reads a sealed trait. Use
+   * [[BsonCodecConfiguration.SumTypeHandling.WrapperWithClassNameField]] or
+   * [[BsonCodecConfiguration.SumTypeHandling.DiscriminatorField]].
    */
   sealed trait SumTypeHandling
 
@@ -66,8 +74,8 @@ object BsonCodecConfiguration {
 
     /**
      * Encodes a sum type as a document with one field, named after the chosen subtype, that holds the subtype's own
-     * document. This is the default. The subtype name is the class name, changed by `classNameMapping` or replaced
-     * by `bsonHint`.
+     * document. This is the default. The subtype name is the class name, changed by `classNameMapping` or replaced by
+     * `bsonHint`.
      *
      * {{{
      * import zio.bson._
@@ -107,11 +115,11 @@ object BsonCodecConfiguration {
 
     /**
      * Encodes a sum type as the document of the chosen subtype with one more field, named `name`, that holds the
-     * subtype's name. The subtype name is the class name, changed by `classNameMapping` or replaced by `bsonHint`.
-     * A `bsonDiscriminator` annotation on the sealed trait takes priority over this setting.
+     * subtype's name. The subtype name is the class name, changed by `classNameMapping` or replaced by `bsonHint`. A
+     * `bsonDiscriminator` annotation on the sealed trait takes priority over this setting.
      *
-     * The subtypes must encode as documents: encoding a value through `toBsonValue` throws a `RuntimeException` with the
-     * message `Subtype is not encoded as an object` when a subtype encodes as another BSON type. When decoding, the
+     * The subtypes must encode as documents: encoding a value through `toBsonValue` throws a `RuntimeException` with
+     * the message `Subtype is not encoded as an object` when a subtype encodes as another BSON type. When decoding, the
      * discriminator field is not treated as an extra field of the subtype.
      *
      * {{{

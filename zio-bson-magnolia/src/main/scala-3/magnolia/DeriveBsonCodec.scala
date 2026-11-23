@@ -25,9 +25,11 @@ import scala.deriving.Mirror
  * // Right(User(Ada,36))
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 object DeriveBsonCodec {
+
   /**
    * Returns a [[zio.bson.BsonCodec]] for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope.

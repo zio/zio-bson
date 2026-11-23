@@ -14,6 +14,7 @@ import scala.language.experimental.macros
 
 /** The Magnolia derivation of a [[zio.bson.BsonEncoder]] for case classes and sealed traits. */
 trait DeriveBsonEncoder {
+
   /** The type class that the derivation creates instances of. */
   type Typeclass[T] = BsonEncoder[T]
 
@@ -79,16 +80,16 @@ trait DeriveBsonEncoder {
     }
 
   /**
-   * Returns the encoder of a sealed trait. It encodes a value as its subtype, and the configuration and the
-   * annotations decide the layout.
+   * Returns the encoder of a sealed trait. It encodes a value as its subtype, and the configuration and the annotations
+   * decide the layout.
    *
-   * By default the document has one field named after the subtype that holds the subtype's document. When a discriminator
-   * is selected, by a `bsonDiscriminator` annotation on the sealed trait or by `DiscriminatorField` in the configuration,
-   * the subtype's fields are written together with a field that holds the subtype name. The subtype name is the one in a
-   * `bsonHint` annotation, or else the class name changed by `classNameMapping`.
+   * By default the document has one field named after the subtype that holds the subtype's document. When a
+   * discriminator is selected, by a `bsonDiscriminator` annotation on the sealed trait or by `DiscriminatorField` in
+   * the configuration, the subtype's fields are written together with a field that holds the subtype name. The subtype
+   * name is the one in a `bsonHint` annotation, or else the class name changed by `classNameMapping`.
    *
-   * With a discriminator, `toBsonValue` throws a `RuntimeException` with the message `Subtype is not encoded as an object`
-   * when a subtype is not encoded as a document.
+   * With a discriminator, `toBsonValue` throws a `RuntimeException` with the message
+   * `Subtype is not encoded as an object` when a subtype is not encoded as a document.
    */
   def split[T](
     sealedTrait: SealedTrait[BsonEncoder, T]
@@ -180,9 +181,11 @@ trait DeriveBsonEncoder {
  * // {"x": 1, "y": 2}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 object DeriveBsonEncoder extends DeriveBsonEncoder {
+
   /**
    * Returns a [[zio.bson.BsonEncoder]] for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope. The fields of a case class and the subtypes of a sealed trait need encoders in

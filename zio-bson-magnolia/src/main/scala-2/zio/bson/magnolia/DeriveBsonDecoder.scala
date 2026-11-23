@@ -16,6 +16,7 @@ import scala.language.experimental.macros
 
 /** The Magnolia derivation of a [[zio.bson.BsonDecoder]] for case classes and sealed traits. */
 trait DeriveBsonDecoder {
+
   /** The type class that the derivation creates instances of. */
   type Typeclass[T] = BsonDecoder[T]
 
@@ -23,10 +24,10 @@ trait DeriveBsonDecoder {
    * Returns the decoder of a case class. It reads a document and builds the class from the fields.
    *
    * The field names are the ones that [[DeriveBsonEncoder]] writes: the name in a `bsonField` annotation, or else the
-   * parameter name changed by `fieldNameMapping`. A field that the document lacks gets the parameter's default value, or
-   * else the result of `decodeMissingUnsafe` of its decoder, which is `None` for an `Option` and a `missing` error for most
-   * types. When the document holds BSON null for a parameter that has a default value, the default value is used. A field
-   * that appears twice fails with the message `duplicate`.
+   * parameter name changed by `fieldNameMapping`. A field that the document lacks gets the parameter's default value,
+   * or else the result of `decodeMissingUnsafe` of its decoder, which is `None` for an `Option` and a `missing` error
+   * for most types. When the document holds BSON null for a parameter that has a default value, the default value is
+   * used. A field that appears twice fails with the message `duplicate`.
    *
    * Fields that the class doesn't have are ignored, unless the class has the `bsonNoExtraFields` annotation or
    * `allowExtraFields` is `false` in the configuration, in which case decoding fails with `Invalid extra field.`. A
@@ -134,8 +135,8 @@ trait DeriveBsonDecoder {
    * Returns the decoder of a sealed trait. It reads the subtype name from the document and decodes the rest as that
    * subtype, with the layout that [[DeriveBsonEncoder]] writes.
    *
-   * Without a discriminator, the document must have exactly one field, named after the subtype. With a discriminator, the
-   * document must have a string field with the discriminator's name. An unknown subtype name fails with
+   * Without a discriminator, the document must have exactly one field, named after the subtype. With a discriminator,
+   * the document must have a string field with the discriminator's name. An unknown subtype name fails with
    * `Invalid disambiguator <name>.`, and a missing discriminator field fails with `Missing disambiguator <name>.`.
    */
   def split[T](
@@ -260,9 +261,11 @@ trait DeriveBsonDecoder {
  * // Right(Point(1,2))
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 object DeriveBsonDecoder extends DeriveBsonDecoder {
+
   /**
    * Returns a [[zio.bson.BsonDecoder]] for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope. The fields of a case class and the subtypes of a sealed trait need decoders in

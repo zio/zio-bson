@@ -6,8 +6,8 @@ import java.time.Instant
 import scala.jdk.CollectionConverters._
 
 /**
- * Short constructors for `org.bson` values, for building a `BsonDocument` by hand in tests or in code that works with the
- * MongoDB driver.
+ * Short constructors for `org.bson` values, for building a `BsonDocument` by hand in tests or in code that works with
+ * the MongoDB driver.
  *
  * {{{
  * import org.bson.BsonDocument
@@ -19,7 +19,8 @@ import scala.jdk.CollectionConverters._
  * )
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 object BsonBuilder {
 

@@ -4,7 +4,8 @@ package zio.bson
  * One step on the path from the root of a BSON value to a nested value: a document field ([[BsonTrace.Field]]) or an
  * array element ([[BsonTrace.Array]]). A decoding error carries a `List[BsonTrace]` with the innermost step first.
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 sealed trait BsonTrace
 
@@ -28,6 +29,7 @@ object BsonTrace {
 
   /** A step into the document field `name`. */
   case class Field(name: String) extends BsonTrace
+
   /** A step into the array element at index `idx`, counted from zero. */
-  case class Array(idx: Int)     extends BsonTrace
+  case class Array(idx: Int) extends BsonTrace
 }

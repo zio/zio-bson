@@ -20,7 +20,8 @@ import scala.annotation.Annotation
  * // {"user_name": "Ada"}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 final case class bsonField(name: String) extends Annotation
 
@@ -45,13 +46,14 @@ final case class bsonField(name: String) extends Annotation
  * // {"radius": 1.5, "type": "Circle"}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 final case class bsonDiscriminator(name: String) extends Annotation
 
 /**
- * Gives a subtype of a sealed trait the name `name` in the BSON document, in place of its class name. The name is the key
- * of the wrapper document, or the value of the discriminator field.
+ * Gives a subtype of a sealed trait the name `name` in the BSON document, in place of its class name. The name is the
+ * key of the wrapper document, or the value of the discriminator field.
  *
  * {{{
  * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
@@ -69,7 +71,8 @@ final case class bsonDiscriminator(name: String) extends Annotation
  * // {"sq": {"side": 2.0}}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 final case class bsonHint(name: String) extends Annotation
 
@@ -98,7 +101,8 @@ final case class bsonHint(name: String) extends Annotation
  * // Left(.b: Invalid extra field.)
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 final class bsonNoExtraFields extends Annotation
 
@@ -106,8 +110,8 @@ final class bsonNoExtraFields extends Annotation
  * Marks a case class field so that the derived encoder leaves it out of the document.
  *
  * The derived decoder still treats the field as part of the class. When the document has no value for it, the decoder
- * uses the field's default value; without a default value the decoding fails with the message `missing`, unless the type
- * of the field decodes a missing field, as `Option` does. When the document does hold a value for the field, the
+ * uses the field's default value; without a default value the decoding fails with the message `missing`, unless the
+ * type of the field decodes a missing field, as `Option` does. When the document does hold a value for the field, the
  * decoder reads it.
  *
  * {{{
@@ -124,6 +128,7 @@ final class bsonNoExtraFields extends Annotation
  * // {"user": "ada"}
  * }}}
  *
- * @see [[https://zio.dev/zio-bson/ ZIO BSON]]
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
  */
 final class bsonExclude extends Annotation
