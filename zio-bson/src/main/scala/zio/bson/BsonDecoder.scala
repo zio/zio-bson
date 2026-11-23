@@ -664,6 +664,8 @@ trait NumberDecoders { self =>
    * convert to a `Float` exactly. A Decimal128 decodes only when it is written as `Double.toString` writes the `Float`
    * widened to a `Double`: `0.5` and `1.0` decode, while `1` and `0.1` fail with
    * `Could not convert DECIMAL128(0.1) to a Float without losing precision.` A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw a `NumberFormatException` instead of returning a `Left`.
    */
   implicit val float: BsonDecoder[Float] = new BsonDecoder[Float] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -717,6 +719,8 @@ trait NumberDecoders { self =>
    * A 32-bit integer, a 64-bit integer, and a double are converted directly; a 64-bit integer with more digits than a
    * `Double` holds is rounded. A Decimal128 decodes only when it is written as `Double.toString` writes the result:
    * `0.1` and `1.0` decode, while `0.10` and `1` fail. A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw a `NumberFormatException` instead of returning a `Left`.
    */
   implicit val double: BsonDecoder[Double] = new BsonDecoder[Double] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -763,6 +767,9 @@ trait NumberDecoders { self =>
    *
    * Integers keep their value, and a Decimal128 is converted to a `BigDecimal`. A double is converted through the text
    * of `Double.toString`, so a BSON double `0.1` decodes as `0.1`. A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw an `ArithmeticException`, and a NaN or infinite double a
+   * `NumberFormatException`, instead of returning a `Left`.
    */
   implicit val javaBigDecimal: BsonDecoder[JBigDecimal] = new BsonDecoder[JBigDecimal] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -806,6 +813,9 @@ trait NumberDecoders { self =>
    *
    * Integers are taken as is. A double must hold a whole number, a Decimal128 must be written without a fractional part
    * (`3` decodes, `3.0` fails), and a string of digits is parsed, which is the form that the `BigInt` encoder writes.
+   *
+   * A NaN or infinite double or Decimal128 makes the call throw an `ArithmeticException` or a `NumberFormatException`
+   * instead of returning a `Left`.
    */
   implicit val bigInteger: BsonDecoder[BigInteger] = new BsonDecoder[BigInteger] {
     private def fromString(trace: List[BsonTrace])(s: String) =
