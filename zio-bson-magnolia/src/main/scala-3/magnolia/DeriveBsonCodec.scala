@@ -8,6 +8,7 @@ import scala.deriving.Mirror
  * and the decoder from [[DeriveBsonDecoder]].
  *
  * {{{
+ * import zio.bson._
  * import org.bson.BsonValue
  * import zio.bson.magnolia._
  *

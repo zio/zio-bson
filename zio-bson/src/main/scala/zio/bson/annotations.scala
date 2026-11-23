@@ -7,6 +7,7 @@ import scala.annotation.Annotation
  * `fieldNameMapping` produces. The derived encoder writes the field under that name and the derived decoder reads it.
  *
  * {{{
+ * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
  * import zio.bson.magnolia._
  *
  * final case class User(@bsonField("user_name") name: String)
@@ -28,6 +29,7 @@ final case class bsonField(name: String) extends Annotation
  * the wrapper document that is the default. It takes priority over the `sumTypeHandling` of the configuration.
  *
  * {{{
+ * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
  * import zio.bson.magnolia._
  *
  * @bsonDiscriminator("type")
@@ -52,6 +54,7 @@ final case class bsonDiscriminator(name: String) extends Annotation
  * of the wrapper document, or the value of the discriminator field.
  *
  * {{{
+ * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
  * import zio.bson.magnolia._
  *
  * sealed trait Shape
@@ -76,6 +79,7 @@ final case class bsonHint(name: String) extends Annotation
  * `allowExtraFields` is `false` in the configuration.
  *
  * {{{
+ * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
  * import org.bson.BsonDocument
  * import org.bson.BsonInt32
  * import zio.bson.magnolia._
@@ -107,6 +111,7 @@ final class bsonNoExtraFields extends Annotation
  * decoder reads it.
  *
  * {{{
+ * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
  * import zio.bson.magnolia._
  *
  * final case class Session(user: String, @bsonExclude attempts: Int = 0)

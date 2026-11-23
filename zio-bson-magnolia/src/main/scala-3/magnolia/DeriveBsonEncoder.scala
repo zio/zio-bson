@@ -19,6 +19,7 @@ import scala.deriving.Mirror
  * Derives a [[zio.bson.BsonEncoder]] for a case class or a sealed trait.
  *
  * {{{
+ * import zio.bson._
  * import zio.bson.magnolia._
  *
  * final case class Point(x: Int, y: Int)

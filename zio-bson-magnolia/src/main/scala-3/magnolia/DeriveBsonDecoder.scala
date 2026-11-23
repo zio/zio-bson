@@ -20,6 +20,7 @@ import magnolia1.AutoDerivation
  * Derives a [[zio.bson.BsonDecoder]] for a case class or a sealed trait.
  *
  * {{{
+ * import zio.bson._
  * import org.bson.{BsonDocument, BsonInt32}
  * import zio.bson.magnolia._
  *

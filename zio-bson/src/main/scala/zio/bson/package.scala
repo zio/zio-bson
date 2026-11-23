@@ -13,6 +13,7 @@ package object bson {
      * Returns this value as an `org.bson.BsonValue`, using the implicit [[BsonEncoder]] for `A`.
      *
      * {{{
+     * import zio.bson._
      * import org.bson.BsonValue
      *
      * val bson: BsonValue = List(1, 2, 3).toBsonValue
@@ -34,6 +35,7 @@ package object bson {
      * starts with the path to the offending value.
      *
      * {{{
+     * import zio.bson._
      * import org.bson.{BsonInt32, BsonString, BsonValue}
      *
      * val ok: Either[String, Int] = (new BsonInt32(7): BsonValue).as[Int]
@@ -56,6 +58,8 @@ package object bson {
    * that the driver moves on to the next provider. The codec throws the [[BsonDecoder.Error]] when decoding fails.
    *
    * {{{
+   * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12
+   * import zio.bson._
    * import org.bson.codecs.configuration.{CodecProvider, CodecRegistries, CodecRegistry}
    * import zio.bson.magnolia._
    *

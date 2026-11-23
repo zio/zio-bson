@@ -10,6 +10,7 @@ import java.util.regex.Pattern
  * parameter and finds [[BsonCodecConfiguration.default]] when none is in scope.
  *
  * {{{
+ * import zio.bson._
  * import zio.bson.magnolia._
  *
  * final case class User(firstName: String, lastName: Option[String])
@@ -69,6 +70,7 @@ object BsonCodecConfiguration {
      * by `bsonHint`.
      *
      * {{{
+     * import zio.bson._
      * import zio.bson.magnolia._
      *
      * sealed trait MySum
@@ -86,7 +88,7 @@ object BsonCodecConfiguration {
      * }
      *
      * val bson = BsonEncoder[Outer].toBsonValue(Outer(SomeBranch(123)))
-     * // {"mySum": {"SomeBranch": {"a": 123}}}
+     * // {"mySum": {"SomeBranch": {"a": 123} } }
      * }}}
      *
      * The BSON for the value above is:
@@ -113,6 +115,7 @@ object BsonCodecConfiguration {
      * discriminator field is not treated as an extra field of the subtype.
      *
      * {{{
+     * import zio.bson._
      * import zio.bson.magnolia._
      *
      * sealed trait MySum
