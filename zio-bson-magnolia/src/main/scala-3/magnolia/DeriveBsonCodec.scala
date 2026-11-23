@@ -4,7 +4,7 @@ import zio.bson.BsonCodec
 import scala.deriving.Mirror
 
 /**
- * Derives a [[zio.bson.BsonCodec]] for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]]
+ * Derives a `zio.bson.BsonCodec` for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]]
  * and the decoder from [[DeriveBsonDecoder]].
  *
  * {{{
@@ -31,7 +31,7 @@ import scala.deriving.Mirror
 object DeriveBsonCodec {
 
   /**
-   * Returns a [[zio.bson.BsonCodec]] for `T`, found at compile time. The result follows the implicit
+   * Returns a `zio.bson.BsonCodec` for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope.
    */
   inline def derive[T: Mirror.Of](using BsonCodecConfiguration): BsonCodec[T] =

@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters._
 import scala.language.experimental.macros
 // scalafix:on
 
-/** The Magnolia derivation of a [[zio.bson.BsonEncoder]] for case classes and sealed traits. */
+/** The Magnolia derivation of a `zio.bson.BsonEncoder` for case classes and sealed traits. */
 trait DeriveBsonEncoder {
 
   /** The type class that the derivation creates instances of. */
@@ -165,7 +165,7 @@ trait DeriveBsonEncoder {
 }
 
 /**
- * Derives a [[zio.bson.BsonEncoder]] for a case class or a sealed trait.
+ * Derives a `zio.bson.BsonEncoder` for a case class or a sealed trait.
  *
  * {{{
  * import zio.bson._
@@ -187,7 +187,7 @@ trait DeriveBsonEncoder {
 object DeriveBsonEncoder extends DeriveBsonEncoder {
 
   /**
-   * Returns a [[zio.bson.BsonEncoder]] for `T`, found at compile time. The result follows the implicit
+   * Returns a `zio.bson.BsonEncoder` for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope. The fields of a case class and the subtypes of a sealed trait need encoders in
    * scope.
    */

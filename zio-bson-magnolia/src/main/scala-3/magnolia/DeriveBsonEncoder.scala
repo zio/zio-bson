@@ -16,7 +16,7 @@ import scala.deriving.Mirror
 // scalafix:on
 
 /**
- * Derives a [[zio.bson.BsonEncoder]] for a case class or a sealed trait.
+ * Derives a `zio.bson.BsonEncoder` for a case class or a sealed trait.
  *
  * {{{
  * import zio.bson._
@@ -222,7 +222,7 @@ object DeriveBsonEncoder {
   }
 
   /**
-   * Returns a [[zio.bson.BsonEncoder]] for `T`, found at compile time. The result follows the given
+   * Returns a `zio.bson.BsonEncoder` for `T`, found at compile time. The result follows the given
    * [[BsonCodecConfiguration]]. The fields of a case class and the subtypes of a sealed trait need encoders in scope.
    */
   inline def derived[T: Mirror.Of](using settings: BsonCodecConfiguration): BsonEncoder[T] =

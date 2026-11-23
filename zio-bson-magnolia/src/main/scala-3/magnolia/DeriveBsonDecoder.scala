@@ -17,7 +17,7 @@ import magnolia1.AutoDerivation
 // scalafix:on
 
 /**
- * Derives a [[zio.bson.BsonDecoder]] for a case class or a sealed trait.
+ * Derives a `zio.bson.BsonDecoder` for a case class or a sealed trait.
  *
  * {{{
  * import zio.bson._
@@ -307,7 +307,7 @@ object DeriveBsonDecoder {
   }
 
   /**
-   * Returns a [[zio.bson.BsonDecoder]] for `T`, found at compile time. The result follows the given
+   * Returns a `zio.bson.BsonDecoder` for `T`, found at compile time. The result follows the given
    * [[BsonCodecConfiguration]]. The fields of a case class and the subtypes of a sealed trait need decoders in scope.
    */
   inline def derived[T: Mirror.Of](using settings: BsonCodecConfiguration): BsonDecoder[T] =

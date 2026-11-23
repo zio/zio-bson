@@ -7,7 +7,7 @@ import scala.language.experimental.macros
 // scalafix:on
 
 /**
- * Derives a [[zio.bson.BsonCodec]] for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]]
+ * Derives a `zio.bson.BsonCodec` for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]]
  * and the decoder from [[DeriveBsonDecoder]].
  *
  * {{{
@@ -34,7 +34,7 @@ import scala.language.experimental.macros
 object DeriveBsonCodec {
 
   /**
-   * Returns a [[zio.bson.BsonCodec]] for `T`, found at compile time. The result follows the implicit
+   * Returns a `zio.bson.BsonCodec` for `T`, found at compile time. The result follows the implicit
    * [[BsonCodecConfiguration]] in scope.
    */
   def derive[T]: BsonCodec[T] = macro genBoth[T]
