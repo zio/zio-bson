@@ -16,10 +16,53 @@ import scala.deriving.Mirror
 import magnolia1.AutoDerivation
 // scalafix:on
 
+/**
+ * Derives a `zio.bson.BsonDecoder` for a case class or a sealed trait.
+ *
+ * {{{
+ * import zio.bson._
+ * import org.bson.{BsonDocument, BsonInt32}
+ * import zio.bson.magnolia._
+ *
+ * final case class Point(x: Int, y: Int)
+ *
+ * object Point {
+ *   implicit val decoder: BsonDecoder[Point] = DeriveBsonDecoder.derived[Point]
+ * }
+ *
+ * val document = new BsonDocument("x", new BsonInt32(1))
+ * document.put("y", new BsonInt32(2))
+ *
+ * val point: Either[BsonDecoder.Error, Point] = BsonDecoder[Point].fromBsonValue(document)
+ * // Right(Point(1,2))
+ * }}}
+ *
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
+ */
 object DeriveBsonDecoder {
+
+  /** The type class that the derivation creates instances of. */
   type Typeclass[T] = BsonDecoder[T]
 
+  /** The decoders for the two kinds of type that the derivation handles. */
   object Codec {
+
+    /**
+     * Returns the decoder of a case class. It reads a document and builds the class from the fields.
+     *
+     * The field names are the ones that [[DeriveBsonEncoder]] writes: the name in a `bsonField` annotation, or else the
+     * parameter name changed by `fieldNameMapping`. A field that the document lacks gets the parameter's default value,
+     * or else the result of `decodeMissingUnsafe` of its decoder, which is `None` for an `Option` and a `missing` error
+     * for most types. When the document holds BSON null for a parameter that has a default value, the default value is
+     * used. A field that appears twice fails with the message `duplicate`.
+     *
+     * Fields that the class doesn't have are ignored, unless the class has the `bsonNoExtraFields` annotation or
+     * `allowExtraFields` is `false` in the configuration, in which case decoding fails with `Invalid extra field.`. The
+     * decoder ignores `bsonExclude`: a marked parameter is read when the document holds it and follows the
+     * missing-field rules otherwise. A document written by the derived encoder therefore decodes only when the
+     * parameter has a default value or an `Option` type.
+     */
     def join[T](caseClass: CaseClass[BsonDecoder, T], configuration: BsonCodecConfiguration): BsonDecoder[T] =
       new BsonDecoder[T] {
         private val names = IArray
@@ -122,6 +165,14 @@ object DeriveBsonDecoder {
           }
       }
 
+    /**
+     * Returns the decoder of a sealed trait. It reads the subtype name from the document and decodes the rest as that
+     * subtype, with the layout that [[DeriveBsonEncoder]] writes.
+     *
+     * Without a discriminator, the document must have exactly one field, named after the subtype. With a discriminator,
+     * the document must have a string field with the discriminator's name. An unknown subtype name fails with
+     * `Invalid disambiguator <name>.`, and a missing discriminator field fails with `Missing disambiguator <name>.`.
+     */
     def split[T](
       sealedTrait: SealedTrait[BsonDecoder, T],
       configuration: BsonCodecConfiguration
@@ -226,14 +277,44 @@ object DeriveBsonDecoder {
     }
   }
 
+  /** The Magnolia derivation that uses the configuration `settings`. */
   class Derive(settings: BsonCodecConfiguration) extends AutoDerivation[BsonDecoder] {
+
+    /**
+     * Returns the decoder of a case class. It reads a document and builds the class from the fields.
+     *
+     * The field names are the ones that [[DeriveBsonEncoder]] writes: the name in a `bsonField` annotation, or else the
+     * parameter name changed by `fieldNameMapping`. A field that the document lacks gets the parameter's default value,
+     * or else the result of `decodeMissingUnsafe` of its decoder, which is `None` for an `Option` and a `missing` error
+     * for most types. When the document holds BSON null for a parameter that has a default value, the default value is
+     * used. A field that appears twice fails with the message `duplicate`.
+     *
+     * Fields that the class doesn't have are ignored, unless the class has the `bsonNoExtraFields` annotation or
+     * `allowExtraFields` is `false` in the configuration, in which case decoding fails with `Invalid extra field.`. The
+     * decoder ignores `bsonExclude`: a marked parameter is read when the document holds it and follows the
+     * missing-field rules otherwise. A document written by the derived encoder therefore decodes only when the
+     * parameter has a default value or an `Option` type.
+     */
     def join[T](caseClass: CaseClass[BsonDecoder, T]): BsonDecoder[T] =
       Codec.join(caseClass, settings)
 
+    /**
+     * Returns the decoder of a sealed trait. It reads the subtype name from the document and decodes the rest as that
+     * subtype, with the layout that [[DeriveBsonEncoder]] writes.
+     *
+     * Without a discriminator, the document must have exactly one field, named after the subtype. With a discriminator,
+     * the document must have a string field with the discriminator's name. An unknown subtype name fails with
+     * `Invalid disambiguator <name>.`, and a missing discriminator field fails with `Missing disambiguator <name>.`.
+     */
     def split[T](sealedTrait: SealedTrait[BsonDecoder, T]): BsonDecoder[T] =
       Codec.split(sealedTrait, settings)
   }
 
+  /**
+   * Returns a `zio.bson.BsonDecoder` for `T`, found at compile time. The result follows the given
+   * [[BsonCodecConfiguration]]. The subtypes of a sealed trait are derived as well, but the field types of each case
+   * class need decoders in scope.
+   */
   inline def derived[T: Mirror.Of](using settings: BsonCodecConfiguration): BsonDecoder[T] =
     new Derive(settings).derived[T]
 

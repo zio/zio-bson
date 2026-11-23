@@ -15,10 +15,44 @@ import magnolia1.AutoDerivation
 import scala.deriving.Mirror
 // scalafix:on
 
+/**
+ * Derives a `zio.bson.BsonEncoder` for a case class or a sealed trait.
+ *
+ * {{{
+ * import zio.bson._
+ * import zio.bson.magnolia._
+ *
+ * final case class Point(x: Int, y: Int)
+ *
+ * object Point {
+ *   implicit val encoder: BsonEncoder[Point] = DeriveBsonEncoder.derived[Point]
+ * }
+ *
+ * val bson = BsonEncoder[Point].toBsonValue(Point(1, 2))
+ * // {"x": 1, "y": 2}
+ * }}}
+ *
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
+ */
 object DeriveBsonEncoder {
+
+  /** The type class that the derivation creates instances of. */
   type Typeclass[T] = BsonEncoder[T]
 
+  /** The encoders for the two kinds of type that the derivation handles. */
   object Codec {
+
+    /**
+     * Returns the encoder of a case class. It writes a document with one field per constructor parameter, in the order
+     * of the parameters.
+     *
+     * A parameter marked `bsonExclude` is left out. The field name is the one in a `bsonField` annotation, or else the
+     * parameter name changed by the `fieldNameMapping` of the configuration. A field whose encoder reports the value as
+     * absent, such as an `Option` that is `None`, is left out when `skipNullsInCaseClass` is enabled, which is the
+     * default. Otherwise the field is written with its encoder, which writes BSON null for `None`. Each parameter needs
+     * an encoder in scope.
+     */
     def join[T](caseClass: CaseClass[BsonEncoder, T], configuration: BsonCodecConfiguration): BsonEncoder[T] =
       new BsonEncoder[T] {
         private val keepNulls = !configuration.skipNullsInCaseClass
@@ -71,6 +105,19 @@ object DeriveBsonEncoder {
         }
       }
 
+    /**
+     * Returns the encoder of a sealed trait. It encodes a value as its subtype, and the configuration and the
+     * annotations decide the layout.
+     *
+     * By default the document has one field named after the subtype that holds the subtype's document. When a
+     * discriminator is selected, by a `bsonDiscriminator` annotation on the sealed trait or by `DiscriminatorField` in
+     * the configuration, the subtype's fields are written together with a field that holds the subtype name. The
+     * subtype name is the one in a `bsonHint` annotation, or else the class name changed by `classNameMapping`.
+     *
+     * With a discriminator, `toBsonValue` throws a `RuntimeException` with the message
+     * `Subtype is not encoded as an object` when a subtype is not encoded as a document, and `encode` fails with a
+     * `BsonInvalidOperationException` from the writer.
+     */
     def split[T](
       sealedTrait: SealedTrait[BsonEncoder, T],
       configuration: BsonCodecConfiguration
@@ -145,14 +192,44 @@ object DeriveBsonEncoder {
     }
   }
 
+  /** The Magnolia derivation that uses the configuration `settings`. */
   class Derive(settings: BsonCodecConfiguration) extends AutoDerivation[BsonEncoder] {
+
+    /**
+     * Returns the encoder of a case class. It writes a document with one field per constructor parameter, in the order
+     * of the parameters.
+     *
+     * A parameter marked `bsonExclude` is left out. The field name is the one in a `bsonField` annotation, or else the
+     * parameter name changed by the `fieldNameMapping` of the configuration. A field whose encoder reports the value as
+     * absent, such as an `Option` that is `None`, is left out when `skipNullsInCaseClass` is enabled, which is the
+     * default. Otherwise the field is written with its encoder, which writes BSON null for `None`. Each parameter needs
+     * an encoder in scope.
+     */
     def join[T](caseClass: CaseClass[BsonEncoder, T]): BsonEncoder[T] =
       Codec.join(caseClass, settings)
 
+    /**
+     * Returns the encoder of a sealed trait. It encodes a value as its subtype, and the configuration and the
+     * annotations decide the layout.
+     *
+     * By default the document has one field named after the subtype that holds the subtype's document. When a
+     * discriminator is selected, by a `bsonDiscriminator` annotation on the sealed trait or by `DiscriminatorField` in
+     * the configuration, the subtype's fields are written together with a field that holds the subtype name. The
+     * subtype name is the one in a `bsonHint` annotation, or else the class name changed by `classNameMapping`.
+     *
+     * With a discriminator, `toBsonValue` throws a `RuntimeException` with the message
+     * `Subtype is not encoded as an object` when a subtype is not encoded as a document, and `encode` fails with a
+     * `BsonInvalidOperationException` from the writer.
+     */
     def split[T](sealedTrait: SealedTrait[BsonEncoder, T]): BsonEncoder[T] =
       Codec.split(sealedTrait, settings)
   }
 
+  /**
+   * Returns a `zio.bson.BsonEncoder` for `T`, found at compile time. The result follows the given
+   * [[BsonCodecConfiguration]]. The subtypes of a sealed trait are derived as well, but the field types of each case
+   * class need encoders in scope.
+   */
   inline def derived[T: Mirror.Of](using settings: BsonCodecConfiguration): BsonEncoder[T] =
     new Derive(settings).derived[T]
 }

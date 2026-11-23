@@ -37,27 +37,106 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
+/**
+ * A `BsonDecoder[A]` reads values of type `A` from BSON, either from an `org.bson.BsonReader` ([[BsonDecoder#decode]])
+ * or from an in-memory `org.bson.BsonValue` ([[BsonDecoder#fromBsonValue]]). A failed decoding is a
+ * [[BsonDecoder.Error]] that holds the path to the offending value and a message.
+ *
+ * Instances for the common Scala and Java types are implicit members of the `BsonDecoder` companion object. Instances
+ * for your own types come from [[BsonDecoder#map]] and [[BsonDecoder#mapOrFail]], from a [[BsonCodec]], or from the
+ * `zio.bson.magnolia.DeriveBsonDecoder` derivation in the `zio-bson-magnolia` module.
+ *
+ * {{{
+ * import org.bson.{BsonInt32, BsonString}
+ *
+ * val int: Either[BsonDecoder.Error, Int] = BsonDecoder[Int].fromBsonValue(new BsonInt32(7))
+ * // Right(7)
+ *
+ * val failed: Either[String, Int] = BsonDecoder[Int].fromBsonValue(new BsonString("x")).left.map(_.render)
+ * // Left(: NumberFormatException(For input string: "x"))
+ * }}}
+ *
+ * @see
+ *   [[https://zio.dev/zio-bson/ ZIO BSON]]
+ */
 trait BsonDecoder[A] { self =>
 
+  /**
+   * Reads one value from `reader`, starting at the reader's current position.
+   *
+   * Returns a `Left` with a [[BsonDecoder.Error]] when the value can't be decoded.
+   */
   def decode(reader: BsonReader): Either[BsonDecoder.Error, A] =
     try Right(decodeUnsafe(reader, Nil, BsonDecoderContext.default))
     catch {
       case e: BsonDecoder.Error => Left(e)
     }
 
+  /**
+   * Decodes `value`, returning a `Left` with a [[BsonDecoder.Error]] when the value is of a type that the decoder
+   * doesn't accept or holds an invalid value.
+   *
+   * {{{
+   * import org.bson.{BsonArray, BsonInt32}
+   *
+   * val array = new BsonArray()
+   * array.add(new BsonInt32(1))
+   * array.add(new BsonInt32(2))
+   *
+   * val ints: Either[BsonDecoder.Error, List[Int]] = BsonDecoder[List[Int]].fromBsonValue(array)
+   * // Right(List(1, 2))
+   * }}}
+   */
   def fromBsonValue(value: BsonValue): Either[BsonDecoder.Error, A] =
     try Right(fromBsonValueUnsafe(value, Nil, BsonDecoderContext.default))
     catch {
       case e: BsonDecoder.Error => Left(e)
     }
 
+  /**
+   * Returns the value to use when a document has no field for this type. The default implementation throws a
+   * [[BsonDecoder.Error]] with the message `missing`; the `Option` decoder returns `None`.
+   *
+   * The derived case class decoders call it for each field that a document lacks. It is not meant to be called from
+   * user code.
+   */
   def decodeMissingUnsafe(trace: List[BsonTrace]): A =
     throw BsonDecoder.Error(trace, "missing")
 
+  /**
+   * Reads one value from `reader`, throwing a [[BsonDecoder.Error]] when it can't be decoded.
+   *
+   * `trace` is the path to the value, the innermost step first. Decoders extend it with [[BsonTrace.Field]] and
+   * [[BsonTrace.Array]] steps when they read nested values, so that an error reports where the problem is.
+   *
+   * This is the method that decoders implement, and that they call on the decoders of nested values. Other code should
+   * call [[BsonDecoder#decode]].
+   */
   def decodeUnsafe(reader: BsonReader, trace: List[BsonTrace], ctx: BsonDecoderContext): A
 
+  /**
+   * Decodes `value`, throwing a [[BsonDecoder.Error]] when it can't be decoded. `trace` is the path to `value`, the
+   * innermost step first.
+   *
+   * This is the method that decoders implement, and that they call on the decoders of nested values. Other code should
+   * call [[BsonDecoder#fromBsonValue]].
+   */
   def fromBsonValueUnsafe(value: BsonValue, trace: List[BsonTrace], ctx: BsonDecoderContext): A
 
+  /**
+   * Returns a decoder for `B` that decodes with this decoder and applies `f` to the result.
+   *
+   * {{{
+   * import org.bson.BsonInt64
+   *
+   * final case class UserId(value: Long)
+   *
+   * val userId: BsonDecoder[UserId] = BsonDecoder[Long].map(UserId(_))
+   *
+   * val decoded: Either[BsonDecoder.Error, UserId] = userId.fromBsonValue(new BsonInt64(42L))
+   * // Right(UserId(42))
+   * }}}
+   */
   def map[B](f: A => B): BsonDecoder[B] = new BsonDecoder[B] {
     override def decodeMissingUnsafe(trace: List[BsonTrace]): B = f(self.decodeMissingUnsafe(trace))
 
@@ -70,6 +149,24 @@ trait BsonDecoder[A] { self =>
     )
   }
 
+  /**
+   * Returns a decoder for `B` that decodes with this decoder and applies `f` to the result. When `f` returns a `Left`,
+   * the decoding fails with a [[BsonDecoder.Error]] that carries the message.
+   *
+   * {{{
+   * import org.bson.BsonString
+   *
+   * final case class Email(address: String)
+   *
+   * val email: BsonDecoder[Email] =
+   *   BsonDecoder[String].mapOrFail { s =>
+   *     if (s.contains("@")) Right(Email(s)) else Left(s"Not an email: \$s")
+   *   }
+   *
+   * val failed: Either[String, Email] = email.fromBsonValue(new BsonString("nope")).left.map(_.render)
+   * // Left(: Not an email: nope)
+   * }}}
+   */
   def mapOrFail[B](f: A => Either[String, B]): BsonDecoder[B] = new BsonDecoder[B] {
     override def decodeMissingUnsafe(trace: List[BsonTrace]): B = f(self.decodeMissingUnsafe(trace)) match {
       case Left(err)    => throw BsonDecoder.Error(trace, err)
@@ -94,21 +191,63 @@ trait BsonDecoder[A] { self =>
   }
 }
 
+/**
+ * The implicit decoders for the types that `zio-bson` supports, and the [[BsonDecoder.Error]] type.
+ *
+ * The `zio.bson` package object adds an `as` extension method on `org.bson.BsonValue` for types that have a decoder in
+ * scope.
+ */
 object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValueDecoders with LowPriorityBsonDecoder1 {
 
+  /**
+   * Returns the implicit `BsonDecoder[A]` in scope.
+   *
+   * {{{
+   * val decoder: BsonDecoder[Int] = BsonDecoder[Int]
+   * }}}
+   */
   def apply[A](implicit decoder: BsonDecoder[A]): BsonDecoder[A] = decoder
 
+  /**
+   * State that a decoder passes down to the decoders of nested values.
+   *
+   * @param ignoreExtraField
+   *   a field name that the next case class decoder must skip even when extra fields are not allowed. The derived
+   *   decoders for sum types set it to the discriminator field, because the subtype's decoder reads the document that
+   *   still contains that field.
+   */
   case class BsonDecoderContext(ignoreExtraField: Option[String] = None)
 
+  /** The companion of [[BsonDecoder.BsonDecoderContext]]. */
   object BsonDecoderContext {
+
+    /** The context with no field to ignore. */
     val default: BsonDecoderContext = BsonDecoderContext()
   }
 
+  /**
+   * The failure of a decoding: where it happened and what went wrong.
+   *
+   * `trace` is the path to the offending value, the innermost step first, and `message` describes the problem. The
+   * exception has no stack trace, and its own message ends with a reminder not to call the `Unsafe` methods directly.
+   *
+   * {{{
+   * val error = BsonDecoder.Error(List(BsonTrace.Field("street"), BsonTrace.Field("address")), "missing")
+   *
+   * val rendered: String = error.render
+   * // .address.street: missing
+   * }}}
+   */
   case class Error(trace: List[BsonTrace], message: String)
       extends RuntimeException(
         s"Path: ${BsonTrace.render(trace)}, error: $message. Don't use `decodeUnsafe` and `fromBsonValueUnsafe` methods."
       )
       with NoStackTrace {
+
+    /**
+     * Returns the path followed by the message, as `<path>: <message>`. The path is empty when the error is at the top
+     * level, and is written with `.name` for document fields and `[index]` for array elements.
+     */
     def render: String = s"${BsonTrace.render(trace)}: $message"
   }
 
@@ -126,6 +265,7 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
         assumeType(trace)(tpe, value)(fromValue)
     }
 
+  /** Decodes a BSON string or a BSON symbol as a `String`. */
   implicit val string: BsonDecoder[String] = new BsonDecoder[String] {
 
     def decodeUnsafe(reader: BsonReader, trace: List[BsonTrace], ctx: BsonDecoderContext): String =
@@ -142,9 +282,11 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
       else throwInvalidType(trace, BsonType.STRING, value.getBsonType)
   }
 
+  /** Decodes a BSON ObjectId as an `org.bson.types.ObjectId`. */
   implicit val objectId: BsonDecoder[ObjectId] =
     primitiveDecoder(BsonType.OBJECT_ID, _.readObjectId(), _.asObjectId().getValue)
 
+  /** Decodes a BSON boolean as a `Boolean`. */
   implicit val boolean: BsonDecoder[Boolean] =
     primitiveDecoder(BsonType.BOOLEAN, _.readBoolean(), _.asBoolean().getValue)
 
@@ -158,18 +300,40 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
       case ex: Exception                => Left(ex.getMessage)
     }
 
-  implicit val dayOfWeek: BsonDecoder[DayOfWeek]   =
+  /**
+   * Decodes a BSON string as a `java.time.DayOfWeek`. The name is matched without regard to case, so `"monday"` and
+   * `"MONDAY"` both decode. An unknown name fails with the message of the underlying `IllegalArgumentException`, for
+   * example `No enum constant java.time.DayOfWeek.FOO`.
+   */
+  implicit val dayOfWeek: BsonDecoder[DayOfWeek] =
     string.mapOrFail(s => parseJavaTime(s.toUpperCase)(DayOfWeek.valueOf))
-  implicit val month: BsonDecoder[Month]           =
-    string.mapOrFail(s => parseJavaTime(s.toUpperCase)(Month.valueOf))
-  implicit val monthDay: BsonDecoder[MonthDay]     = string.mapOrFail(s => parseJavaTime(s)(MonthDay.parse))
-  implicit val year: BsonDecoder[Year]             = int.mapOrFail(i => parseJavaTime(i)(Year.of))
-  implicit val yearMonth: BsonDecoder[YearMonth]   = string.mapOrFail(s => parseJavaTime(s)(YearMonth.parse))
-  implicit val zoneId: BsonDecoder[ZoneId]         = string.mapOrFail(s => parseJavaTime(s)(ZoneId.of))
-  implicit val zoneOffset: BsonDecoder[ZoneOffset] = string.mapOrFail(s => parseJavaTime(s)(ZoneOffset.of))
-  implicit val duration: BsonDecoder[Duration]     = string.mapOrFail(s => parseJavaTime(s)(Duration.parse))
-  implicit val period: BsonDecoder[Period]         = string.mapOrFail(s => parseJavaTime(s)(Period.parse))
 
+  /** Decodes a BSON string as a `java.time.Month`. The name is matched without regard to case. */
+  implicit val month: BsonDecoder[Month] =
+    string.mapOrFail(s => parseJavaTime(s.toUpperCase)(Month.valueOf))
+
+  /** Decodes a BSON string such as `"--12-03"` as a `java.time.MonthDay`. */
+  implicit val monthDay: BsonDecoder[MonthDay] = string.mapOrFail(s => parseJavaTime(s)(MonthDay.parse))
+
+  /** Decodes a BSON number or string as a `java.time.Year`, using the rules of the `Int` decoder. */
+  implicit val year: BsonDecoder[Year] = int.mapOrFail(i => parseJavaTime(i)(Year.of))
+
+  /** Decodes a BSON string such as `"2024-05"` as a `java.time.YearMonth`. */
+  implicit val yearMonth: BsonDecoder[YearMonth] = string.mapOrFail(s => parseJavaTime(s)(YearMonth.parse))
+
+  /** Decodes a BSON string such as `"Europe/Paris"` as a `java.time.ZoneId`. */
+  implicit val zoneId: BsonDecoder[ZoneId] = string.mapOrFail(s => parseJavaTime(s)(ZoneId.of))
+
+  /** Decodes a BSON string such as `"+02:00"` as a `java.time.ZoneOffset`. */
+  implicit val zoneOffset: BsonDecoder[ZoneOffset] = string.mapOrFail(s => parseJavaTime(s)(ZoneOffset.of))
+
+  /** Decodes a BSON string in the ISO-8601 form, such as `"PT1H30M"`, as a `java.time.Duration`. */
+  implicit val duration: BsonDecoder[Duration] = string.mapOrFail(s => parseJavaTime(s)(Duration.parse))
+
+  /** Decodes a BSON string in the ISO-8601 form, such as `"P1Y2M"`, as a `java.time.Period`. */
+  implicit val period: BsonDecoder[Period] = string.mapOrFail(s => parseJavaTime(s)(Period.parse))
+
+  /** Decodes a BSON date-time as a `java.time.Instant`. Other BSON types are rejected. */
   implicit val instant: BsonDecoder[Instant] =
     primitiveDecoder(
       BsonType.DATE_TIME,
@@ -177,9 +341,14 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
       value => Instant.ofEpochMilli(value.asDateTime().getValue)
     )
 
-  implicit val localDate: BsonDecoder[LocalDate]         = instant.map(_.atZone(ZoneOffset.UTC).toLocalDate)
+  /** Decodes a BSON date-time as a `java.time.LocalDate`, reading the instant in UTC. */
+  implicit val localDate: BsonDecoder[LocalDate] = instant.map(_.atZone(ZoneOffset.UTC).toLocalDate)
+
+  /** Decodes a BSON date-time as a `java.time.LocalDateTime`, reading the instant in UTC. */
   implicit val localDateTime: BsonDecoder[LocalDateTime] = instant.map(_.atZone(ZoneOffset.UTC).toLocalDateTime)
-  implicit val localTime: BsonDecoder[LocalTime]         = instant.map(_.atZone(ZoneOffset.UTC).toLocalTime)
+
+  /** Decodes a BSON date-time as a `java.time.LocalTime`, reading the instant in UTC. */
+  implicit val localTime: BsonDecoder[LocalTime] = instant.map(_.atZone(ZoneOffset.UTC).toLocalTime)
 
   private def locationDateTime[T](locationField: String)(from: (Instant, String) => Either[String, T]) =
     new BsonDecoder[T] {
@@ -234,6 +403,15 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
         }
     }
 
+  /**
+   * Decodes a BSON document with a `date_time` field, a BSON date-time, and an `offset` field, a string such as
+   * `"+02:00"`, as a `java.time.OffsetDateTime` at that instant and offset.
+   *
+   * A missing field fails with `Missed field.` at the path of the field. When read from a `BsonReader`, any other field
+   * fails with `Invalid extra field.` at the path of that field. When decoded from a `BsonValue`, a document with more
+   * than two fields fails with `Invalid extra fields.`, and a document with two fields where one is unknown fails with
+   * `Missed field.` for the field it lacks.
+   */
   implicit lazy val offsetDateTime: BsonDecoder[OffsetDateTime] =
     locationDateTime[OffsetDateTime]("offset") { (instant, offset) =>
       Try {
@@ -241,9 +419,18 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
       }.toEither.swap.map(t => s"Failed to parse OffsetDateTime: ${t.getMessage}").swap
     }
 
+  /**
+   * Decodes the document of the [[BsonDecoder.offsetDateTime]] decoder as a `java.time.OffsetTime`, keeping only the
+   * time and the offset.
+   */
   implicit lazy val offsetTime: BsonDecoder[OffsetTime] =
     offsetDateTime.map(_.toOffsetTime)
 
+  /**
+   * Decodes a BSON document with a `date_time` field, a BSON date-time, and a `zone_id` field, a string such as
+   * `"Europe/Paris"`, as a `java.time.ZonedDateTime` at that instant in that zone. The rules for missing and extra
+   * fields are those of the [[BsonDecoder.offsetDateTime]] decoder.
+   */
   implicit lazy val zonedDateTime: BsonDecoder[ZonedDateTime] =
     locationDateTime[ZonedDateTime]("zone_id") { (instant, zoneId) =>
       Try {
@@ -251,21 +438,42 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
       }.toEither.swap.map(t => s"Failed to parse ZonedDateTime: ${t.getMessage}").swap
     }
 
+  /**
+   * Decodes a BSON string of length one as a `Char`. A string of any other length fails with
+   * `Expected one character, but got a string of length <n>.`
+   */
   implicit val char: BsonDecoder[Char] = string.mapOrFail { str =>
     if (str.length == 1) Right(str(0))
     else Left(s"Expected one character, but got a string of length ${str.length}.")
   }
 
+  /** Decodes a BSON string or symbol as a `scala.Symbol`. */
   implicit val symbol: BsonDecoder[Symbol] = string.map(Symbol(_))
 
+  /** Decodes a BSON string in the canonical text form as a `java.util.UUID`. */
   implicit val uuid: BsonDecoder[UUID] = string.mapOrFail { s =>
     Try(UUID.fromString(s)).toEither.swap.map(t => s"Invalid UUID: ${t.getMessage}").swap
   }
 
+  /** Decodes a BSON string holding an ISO 4217 code, such as `"EUR"`, as a `java.util.Currency`. */
   implicit val currency: BsonDecoder[java.util.Currency] = string.mapOrFail { s =>
     Try(java.util.Currency.getInstance(s)).toEither.swap.map(t => s"Invalid Currency: ${t.getMessage}").swap
   }
 
+  /**
+   * Decodes an `Option[A]`: BSON null is `None`, and any other value is decoded with the decoder for `A` and wrapped in
+   * `Some`. A missing document field is also `None`, through [[BsonDecoder#decodeMissingUnsafe]].
+   *
+   * {{{
+   * import org.bson.{BsonInt32, BsonNull}
+   *
+   * val none: Either[BsonDecoder.Error, Option[Int]] = BsonDecoder[Option[Int]].fromBsonValue(BsonNull.VALUE)
+   * // Right(None)
+   *
+   * val some: Either[BsonDecoder.Error, Option[Int]] = BsonDecoder[Option[Int]].fromBsonValue(new BsonInt32(1))
+   * // Right(Some(1))
+   * }}}
+   */
   implicit def option[A](implicit A: BsonDecoder[A]): BsonDecoder[Option[A]] = new BsonDecoder[Option[A]] {
     override def decodeMissingUnsafe(trace: List[BsonTrace]): Option[A] = None
 
@@ -282,10 +490,19 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
 
 }
 
+/** Implicit decoders that are tried after those in the [[BsonDecoder]] companion. */
 trait LowPriorityBsonDecoder1 {
+
+  /** Returns the decoder of the implicit [[BsonCodec]] for `A`. */
   implicit def fromCodec[A](implicit codec: BsonCodec[A]): BsonDecoder[A] = codec.decoder
 }
 
+/**
+ * Implicit decoders for the numeric types, mixed into the `BsonDecoder` companion.
+ *
+ * The numeric decoders accept several BSON types. Integers convert to `Float` and `Double` with rounding. The other
+ * conversions fail when the value does not convert exactly, and a BSON string is parsed as a number.
+ */
 trait NumberDecoders { self =>
   private def validateIntRange(value: Int, min: Int, max: Int): Either[String, Int] =
     if (value <= max && value >= min) Right(value)
@@ -306,6 +523,25 @@ trait NumberDecoders { self =>
   ): Nothing =
     throw Error(trace, s"Could not convert $actual($value) to a $expected without losing precision.")
 
+  /**
+   * Decodes a BSON number or string as an `Int`.
+   *
+   * A 32-bit integer is taken as is. A 64-bit integer must be within the range of an `Int`, and fails with a message
+   * such as `Long value 3000000000 is not within range [-2147483648, 2147483647].` otherwise. A double must hold a
+   * whole number in that range, and fails with `Could not convert DOUBLE(1.5) to a Int without losing precision.`
+   * otherwise. A Decimal128 must also be written without a fractional part: `3` decodes and `3.0` fails. A string is
+   * parsed, and fails with a `NumberFormatException` message when it isn't an `Int`.
+   *
+   * {{{
+   * import org.bson.BsonDouble
+   *
+   * val whole: Either[BsonDecoder.Error, Int] = BsonDecoder[Int].fromBsonValue(new BsonDouble(3.0))
+   * // Right(3)
+   *
+   * val fraction: Either[String, Int] = BsonDecoder[Int].fromBsonValue(new BsonDouble(1.5)).left.map(_.render)
+   * // Left(: Could not convert DOUBLE(1.5) to a Int without losing precision.)
+   * }}}
+   */
   implicit val int: BsonDecoder[Int] = new BsonDecoder[Int] {
     private def fromLong(trace: List[BsonTrace])(l: Long) =
       validateLongRangeUnsafe(trace, l, Int.MinValue, Int.MaxValue).toInt
@@ -355,11 +591,27 @@ trait NumberDecoders { self =>
       }
   }
 
-  implicit val byte: BsonDecoder[Byte]   =
+  /**
+   * Decodes a BSON number or string as a `Byte`. The value is decoded as an `Int` first and fails with
+   * `Int value 300 is not within range [-128, 127].` when it is outside the range of a `Byte`.
+   */
+  implicit val byte: BsonDecoder[Byte] =
     int.mapOrFail(validateIntRange(_, Byte.MinValue, Byte.MaxValue).map(_.toByte))
+
+  /**
+   * Decodes a BSON number or string as a `Short`. The value is decoded as an `Int` first and fails when it is outside
+   * the range of a `Short`.
+   */
   implicit val short: BsonDecoder[Short] =
     int.mapOrFail(validateIntRange(_, Short.MinValue, Short.MaxValue).map(_.toShort))
 
+  /**
+   * Decodes a BSON number or string as a `Long`.
+   *
+   * A 32-bit or 64-bit integer is taken as is. A double must hold a whole number, a Decimal128 must be written without
+   * a fractional part (`3` decodes, `3.0` fails), and a string is parsed. A double of exactly 9.223372036854775808E18
+   * (2 to the power of 63) decodes as `Long.MaxValue`.
+   */
   implicit val long: BsonDecoder[Long] = new BsonDecoder[Long] {
     private def fromString(trace: List[BsonTrace])(s: String) =
       try s.toLong
@@ -405,6 +657,16 @@ trait NumberDecoders { self =>
       }
   }
 
+  /**
+   * Decodes a BSON number or string as a `Float`.
+   *
+   * A 32-bit or 64-bit integer is converted with rounding when it has more digits than a `Float` holds. A double must
+   * convert to a `Float` exactly. A Decimal128 decodes only when it is written as `Double.toString` writes the `Float`
+   * widened to a `Double`: `0.5` and `1.0` decode, while `1` and `0.1` fail with
+   * `Could not convert DECIMAL128(0.1) to a Float without losing precision.` A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw a `NumberFormatException` instead of returning a `Left`.
+   */
   implicit val float: BsonDecoder[Float] = new BsonDecoder[Float] {
     private def fromString(trace: List[BsonTrace])(s: String) =
       try s.toFloat
@@ -451,6 +713,15 @@ trait NumberDecoders { self =>
       }
   }
 
+  /**
+   * Decodes a BSON number or string as a `Double`.
+   *
+   * A 32-bit integer, a 64-bit integer, and a double are converted directly; a 64-bit integer with more digits than a
+   * `Double` holds is rounded. A Decimal128 decodes only when it is written as `Double.toString` writes the result:
+   * `0.1` and `1.0` decode, while `0.10` and `1` fail. A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw a `NumberFormatException` instead of returning a `Left`.
+   */
   implicit val double: BsonDecoder[Double] = new BsonDecoder[Double] {
     private def fromString(trace: List[BsonTrace])(s: String) =
       try s.toDouble
@@ -491,6 +762,15 @@ trait NumberDecoders { self =>
       }
   }
 
+  /**
+   * Decodes a BSON number or string as a `java.math.BigDecimal`.
+   *
+   * Integers keep their value, and a Decimal128 is converted to a `BigDecimal`. A double is converted through the text
+   * of `Double.toString`, so a BSON double `0.1` decodes as `0.1`. A string is parsed.
+   *
+   * A NaN or infinite Decimal128 makes the call throw an `ArithmeticException`, and a NaN or infinite double a
+   * `NumberFormatException`, instead of returning a `Left`.
+   */
   implicit val javaBigDecimal: BsonDecoder[JBigDecimal] = new BsonDecoder[JBigDecimal] {
     private def fromString(trace: List[BsonTrace])(s: String) =
       try new JBigDecimal(s)
@@ -523,8 +803,20 @@ trait NumberDecoders { self =>
       }
   }
 
+  /**
+   * Decodes a BSON number or string as a `scala.BigDecimal`, with the rules of the `java.math.BigDecimal` decoder.
+   */
   implicit val bigDecimal: BsonDecoder[BigDecimal] = javaBigDecimal.map(x => x)
 
+  /**
+   * Decodes a BSON number or string as a `java.math.BigInteger`.
+   *
+   * Integers are taken as is. A double must hold a whole number, a Decimal128 must be written without a fractional part
+   * (`3` decodes, `3.0` fails), and a string of digits is parsed, which is the form that the `BigInt` encoder writes.
+   *
+   * A NaN or infinite double or Decimal128 makes the call throw an `ArithmeticException` or a `NumberFormatException`
+   * instead of returning a `Left`.
+   */
   implicit val bigInteger: BsonDecoder[BigInteger] = new BsonDecoder[BigInteger] {
     private def fromString(trace: List[BsonTrace])(s: String) =
       try new BigInteger(s)
@@ -572,11 +864,18 @@ trait NumberDecoders { self =>
       }
   }
 
+  /** Decodes a BSON number or string as a `scala.BigInt`, with the rules of the `java.math.BigInteger` decoder. */
   implicit val bigInt: BsonDecoder[BigInt] = bigInteger.map(x => x)
 
 }
 
+/** Implicit decoders for binary data, mixed into the `BsonDecoder` companion. */
 trait CollectionDecoders extends LowPriorityCollectionDecoders {
+
+  /**
+   * Decodes BSON binary data into a collection of bytes that `factory` can build, such as `Array[Byte]`, `Chunk[Byte]`
+   * or `Vector[Byte]`.
+   */
   implicit def byteIterableFactory[CC[_]](implicit factory: Factory[Byte, CC[Byte]]): BsonDecoder[CC[Byte]] =
     new BsonDecoder[CC[Byte]] {
 
@@ -591,14 +890,34 @@ trait CollectionDecoders extends LowPriorityCollectionDecoders {
         }
     }
 
+  /** Decodes BSON binary data as a `zio.NonEmptyChunk[Byte]`. Empty data fails with `Chunk was empty`. */
   implicit val byteNonEmptyChunk: BsonDecoder[NonEmptyChunk[Byte]] =
     byteIterableFactory[Chunk].mapOrFail(NonEmptyChunk.fromChunk(_).toRight("Chunk was empty"))
 }
 
+/** Implicit decoders for arrays and maps, tried after the decoders in [[CollectionDecoders]]. */
 trait LowPriorityCollectionDecoders {
+
+  /** Decodes a BSON array as a `zio.NonEmptyChunk[A]`. An empty array fails with `Chunk was empty`. */
   implicit def nonEmptyChunk[A: BsonDecoder]: BsonDecoder[NonEmptyChunk[A]] =
     implicitly[BsonDecoder[Chunk[A]]].mapOrFail(NonEmptyChunk.fromChunk(_).toRight("Chunk was empty"))
 
+  /**
+   * Decodes a BSON array into a collection that `factory` can build, such as `List`, `Vector`, `Set` or `Array`,
+   * decoding each element with the decoder for `A`. An error in an element reports the index of the element in its
+   * path.
+   *
+   * {{{
+   * import org.bson.{BsonArray, BsonInt32, BsonString}
+   *
+   * val array = new BsonArray()
+   * array.add(new BsonInt32(1))
+   * array.add(new BsonString("x"))
+   *
+   * val result: Either[String, List[Int]] = BsonDecoder[List[Int]].fromBsonValue(array).left.map(_.render)
+   * // Left([1]: NumberFormatException(For input string: "x"))
+   * }}}
+   */
   implicit def iterableFactory[A, CC[_]](implicit A: BsonDecoder[A], factory: Factory[A, CC[A]]): BsonDecoder[CC[A]] =
     new BsonDecoder[CC[A]] {
 
@@ -632,6 +951,21 @@ trait LowPriorityCollectionDecoders {
         }
     }
 
+  /**
+   * Decodes a BSON document into a map that `factory` can build. Each field name is decoded with the implicit
+   * [[BsonFieldDecoder]] for `K` and each value with the decoder for `V`. An error in a value reports the field name in
+   * its path.
+   *
+   * {{{
+   * import org.bson.{BsonDocument, BsonInt32}
+   *
+   * val document = new BsonDocument("a", new BsonInt32(1))
+   * document.put("b", new BsonInt32(2))
+   *
+   * val map: Either[BsonDecoder.Error, Map[String, Int]] = BsonDecoder[Map[String, Int]].fromBsonValue(document)
+   * // Right(Map(a -> 1, b -> 2))
+   * }}}
+   */
   implicit def mapFactory[K, V, CC[_, _]](implicit
     K: BsonFieldDecoder[K],
     V: BsonDecoder[V],
@@ -669,10 +1003,19 @@ trait LowPriorityCollectionDecoders {
     }
 }
 
+/** Implicit decoders for the `org.bson.BsonValue` types, mixed into the `BsonDecoder` companion. */
 trait BsonValueDecoders {
   private lazy val registry       = Bson.DEFAULT_CODEC_REGISTRY
   private lazy val defaultContext = JDecoderContext.builder().build()
 
+  /**
+   * Decodes a value as the `org.bson.BsonValue` subtype `T`, for example `BsonString` or `BsonDocument`, without
+   * converting it.
+   *
+   * From a `BsonValue`, a value of another type fails with a message such as
+   * `Expected BsonValue type org.bson.BsonString, but got INT32.` From a `BsonReader`, the value is read with the
+   * default codec of the MongoDB driver for `T`.
+   */
   implicit def bsonValueDecoder[T <: BsonValue: ClassTag]: BsonDecoder[T] = new BsonDecoder[T] {
 
     def decodeUnsafe(reader: BsonReader, trace: List[BsonTrace], ctx: BsonDecoderContext): T = unsafeCall(trace) {
@@ -695,8 +1038,16 @@ trait BsonValueDecoders {
   }
 }
 
+/**
+ * Helpers for writing decoders by hand: they turn the exceptions of the BSON reader and type mismatches into
+ * [[BsonDecoder.Error]].
+ */
 object DecoderUtils {
 
+  /**
+   * Runs `call` and turns a `BsonInvalidOperationException` or an `IllegalStateException` that it throws into a
+   * [[BsonDecoder.Error]] at `trace`.
+   */
   def unsafeCall[R](trace: List[BsonTrace])(call: => R): R =
     try call
     catch {
@@ -704,9 +1055,16 @@ object DecoderUtils {
       case e: IllegalStateException         => throw BsonDecoder.Error(trace, e.getMessage)
     }
 
+  /**
+   * Throws a [[BsonDecoder.Error]] at `trace` with the message `Expected BSON type <expected>, but got <actual>.`
+   */
   def throwInvalidType(trace: List[BsonTrace], expected: BsonType, actual: BsonType): Nothing =
     throw BsonDecoder.Error(trace, s"Expected BSON type $expected, but got $actual.")
 
+  /**
+   * Applies `f` to `value` when its BSON type is `tpe`, and otherwise throws a [[BsonDecoder.Error]] at `trace` for the
+   * type mismatch. Exceptions from `f` are handled as in `unsafeCall`.
+   */
   def assumeType[T](trace: List[BsonTrace])(tpe: BsonType, value: BsonValue)(f: BsonValue => T): T =
     if (value.getBsonType == tpe) unsafeCall(trace)(f(value))
     else throwInvalidType(trace, tpe, value.getBsonType)
