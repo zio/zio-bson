@@ -8,6 +8,7 @@ package zio.bson
  */
 sealed trait BsonTrace
 
+/** The steps of a path, and [[BsonTrace.render]] to write a path as text. */
 object BsonTrace {
 
   /**

@@ -22,9 +22,6 @@ trait BsonFieldDecoder[+A] {
   final def map[B](f: A => B): BsonFieldDecoder[B] =
     new BsonFieldDecoder[B] {
 
-      /**
-       * Returns the key for the field name `in`, or throws a [[BsonDecoder.Error]] at `trace` when the name is not valid for `A`.
-       */
       def unsafeDecodeField(trace: List[BsonTrace], in: String): B =
         f(self.unsafeDecodeField(trace, in))
     }
@@ -42,15 +39,21 @@ trait BsonFieldDecoder[+A] {
         }
     }
 
+  /**
+   * Returns the key for the field name `in`, or throws a [[BsonDecoder.Error]] at `trace` when the name is not valid
+   * for `A`.
+   */
   def unsafeDecodeField(trace: List[BsonTrace], in: String): A
 }
 
+/** The implicit field decoders for `String`, `Int` and `Long`, and the `apply` summoner. */
 object BsonFieldDecoder {
   /** Returns the implicit `BsonFieldDecoder[A]` in scope. */
   def apply[A](implicit a: BsonFieldDecoder[A]): BsonFieldDecoder[A] = a
 
   /** Uses the field name as a `String` key. */
   implicit val string: BsonFieldDecoder[String] = new BsonFieldDecoder[String] {
+    /** Returns the field name unchanged. */
     def unsafeDecodeField(trace: List[BsonTrace], in: String): String = in
   }
 
