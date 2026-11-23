@@ -30,8 +30,10 @@ trait DeriveBsonDecoder {
    * used. A field that appears twice fails with the message `duplicate`.
    *
    * Fields that the class doesn't have are ignored, unless the class has the `bsonNoExtraFields` annotation or
-   * `allowExtraFields` is `false` in the configuration, in which case decoding fails with `Invalid extra field.`. A
-   * parameter marked `bsonExclude` is still read when the document holds it.
+   * `allowExtraFields` is `false` in the configuration, in which case decoding fails with `Invalid extra field.`. The
+   * decoder ignores `bsonExclude`: a marked parameter is read when the document holds it and follows the missing-field
+   * rules otherwise. A document written by the derived encoder therefore decodes only when the parameter has a default
+   * value or an `Option` type.
    */
   def join[T](caseClass: CaseClass[BsonDecoder, T])(implicit configuration: BsonCodecConfiguration): BsonDecoder[T] =
     new BsonDecoder[T] {
@@ -268,8 +270,8 @@ object DeriveBsonDecoder extends DeriveBsonDecoder {
 
   /**
    * Returns a `zio.bson.BsonDecoder` for `T`, found at compile time. The result follows the implicit
-   * [[BsonCodecConfiguration]] in scope. The fields of a case class and the subtypes of a sealed trait need decoders in
-   * scope.
+   * [[BsonCodecConfiguration]] in scope. The subtypes of a sealed trait are derived as well, but the field types of
+   * each case class need decoders in scope.
    */
   def derive[T]: BsonDecoder[T] = macro Magnolia.gen[T]
 }

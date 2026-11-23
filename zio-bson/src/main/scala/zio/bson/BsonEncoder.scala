@@ -470,7 +470,10 @@ trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
   }
 }
 
-/** Implicit encoders for collections, arrays and `zio.NonEmptyChunk`, tried after the encoders in [[CollectionEncoders]]. */
+/**
+ * Implicit encoders for collections, arrays and `zio.NonEmptyChunk`, tried after the encoders in
+ * [[CollectionEncoders]].
+ */
 trait LowPriorityCollectionEncoders1 {
 
   /**

@@ -73,7 +73,8 @@ trait BsonDecoder[A] { self =>
     }
 
   /**
-   * Decodes `value`, returning a `Left` with a [[BsonDecoder.Error]] when it can't be decoded.
+   * Decodes `value`, returning a `Left` with a [[BsonDecoder.Error]] when the value is of a type that the decoder
+   * doesn't accept or holds an invalid value.
    *
    * {{{
    * import org.bson.{BsonArray, BsonInt32}
@@ -96,7 +97,8 @@ trait BsonDecoder[A] { self =>
    * Returns the value to use when a document has no field for this type. The default implementation throws a
    * [[BsonDecoder.Error]] with the message `missing`; the `Option` decoder returns `None`.
    *
-   * The name says that the call throws: prefer [[BsonDecoder#decode]] and [[BsonDecoder#fromBsonValue]].
+   * The derived case class decoders call it for each field that a document lacks. It is not meant to be called from
+   * user code.
    */
   def decodeMissingUnsafe(trace: List[BsonTrace]): A =
     throw BsonDecoder.Error(trace, "missing")
@@ -107,7 +109,8 @@ trait BsonDecoder[A] { self =>
    * `trace` is the path to the value, the innermost step first. Decoders extend it with [[BsonTrace.Field]] and
    * [[BsonTrace.Array]] steps when they read nested values, so that an error reports where the problem is.
    *
-   * This is the method that decoders implement. Call [[BsonDecoder#decode]] instead of calling it directly.
+   * This is the method that decoders implement, and that they call on the decoders of nested values. Other code should
+   * call [[BsonDecoder#decode]].
    */
   def decodeUnsafe(reader: BsonReader, trace: List[BsonTrace], ctx: BsonDecoderContext): A
 
@@ -115,7 +118,8 @@ trait BsonDecoder[A] { self =>
    * Decodes `value`, throwing a [[BsonDecoder.Error]] when it can't be decoded. `trace` is the path to `value`, the
    * innermost step first.
    *
-   * This is the method that decoders implement. Call [[BsonDecoder#fromBsonValue]] instead of calling it directly.
+   * This is the method that decoders implement, and that they call on the decoders of nested values. Other code should
+   * call [[BsonDecoder#fromBsonValue]].
    */
   def fromBsonValueUnsafe(value: BsonValue, trace: List[BsonTrace], ctx: BsonDecoderContext): A
 
@@ -311,7 +315,7 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
   /** Decodes a BSON string such as `"--12-03"` as a `java.time.MonthDay`. */
   implicit val monthDay: BsonDecoder[MonthDay] = string.mapOrFail(s => parseJavaTime(s)(MonthDay.parse))
 
-  /** Decodes a BSON number as a `java.time.Year`, using the rules of the `Int` decoder. */
+  /** Decodes a BSON number or string as a `java.time.Year`, using the rules of the `Int` decoder. */
   implicit val year: BsonDecoder[Year] = int.mapOrFail(i => parseJavaTime(i)(Year.of))
 
   /** Decodes a BSON string such as `"2024-05"` as a `java.time.YearMonth`. */
@@ -403,9 +407,10 @@ object BsonDecoder extends NumberDecoders with CollectionDecoders with BsonValue
    * Decodes a BSON document with a `date_time` field, a BSON date-time, and an `offset` field, a string such as
    * `"+02:00"`, as a `java.time.OffsetDateTime` at that instant and offset.
    *
-   * A missing field fails with `Missed field.` at the path of the field. A document with any other field fails with
-   * `Invalid extra field.` when read from a `BsonReader` and with `Invalid extra fields.` when decoded from a
-   * `BsonValue`.
+   * A missing field fails with `Missed field.` at the path of the field. When read from a `BsonReader`, any other field
+   * fails with `Invalid extra field.` at the path of that field. When decoded from a `BsonValue`, a document with more
+   * than two fields fails with `Invalid extra fields.`, and a document with two fields where one is unknown fails with
+   * `Missed field.` for the field it lacks.
    */
   implicit lazy val offsetDateTime: BsonDecoder[OffsetDateTime] =
     locationDateTime[OffsetDateTime]("offset") { (instant, offset) =>
@@ -495,8 +500,8 @@ trait LowPriorityBsonDecoder1 {
 /**
  * Implicit decoders for the numeric types, mixed into the `BsonDecoder` companion.
  *
- * The numeric decoders accept several BSON types. A value converts when it fits the target type without losing
- * precision, and a BSON string is parsed as a number.
+ * The numeric decoders accept several BSON types. Integers convert to `Float` and `Double` with rounding. The other
+ * conversions fail when the value does not convert exactly, and a BSON string is parsed as a number.
  */
 trait NumberDecoders { self =>
   private def validateIntRange(value: Int, min: Int, max: Int): Either[String, Int] =
@@ -522,10 +527,10 @@ trait NumberDecoders { self =>
    * Decodes a BSON number or string as an `Int`.
    *
    * A 32-bit integer is taken as is. A 64-bit integer must be within the range of an `Int`, and fails with a message
-   * such as `Long value 3000000000 is not within range [-2147483648, 2147483647].` otherwise. A double or Decimal128
-   * must hold a whole number in that range, and fails with
-   * `Could not convert DOUBLE(1.5) to a Int without losing precision.` otherwise. A string is parsed, and fails with a
-   * `NumberFormatException` message when it isn't an `Int`.
+   * such as `Long value 3000000000 is not within range [-2147483648, 2147483647].` otherwise. A double must hold a
+   * whole number in that range, and fails with `Could not convert DOUBLE(1.5) to a Int without losing precision.`
+   * otherwise. A Decimal128 must also be written without a fractional part: `3` decodes and `3.0` fails. A string is
+   * parsed, and fails with a `NumberFormatException` message when it isn't an `Int`.
    *
    * {{{
    * import org.bson.BsonDouble
@@ -603,8 +608,9 @@ trait NumberDecoders { self =>
   /**
    * Decodes a BSON number or string as a `Long`.
    *
-   * A 32-bit or 64-bit integer is taken as is. A double or Decimal128 must hold a whole number, and a string is parsed.
-   * A double of exactly 9.223372036854775808E18 (2 to the power of 63) decodes as `Long.MaxValue`.
+   * A 32-bit or 64-bit integer is taken as is. A double must hold a whole number, a Decimal128 must be written without
+   * a fractional part (`3` decodes, `3.0` fails), and a string is parsed. A double of exactly 9.223372036854775808E18
+   * (2 to the power of 63) decodes as `Long.MaxValue`.
    */
   implicit val long: BsonDecoder[Long] = new BsonDecoder[Long] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -655,8 +661,8 @@ trait NumberDecoders { self =>
    * Decodes a BSON number or string as a `Float`.
    *
    * A 32-bit or 64-bit integer is converted with rounding when it has more digits than a `Float` holds. A double must
-   * convert to a `Float` exactly. A Decimal128 fails when its value can't be represented exactly as a `Float`: for
-   * example, `0.5` decodes and `0.1` fails with
+   * convert to a `Float` exactly. A Decimal128 decodes only when it is written as `Double.toString` writes the `Float`
+   * widened to a `Double`: `0.5` and `1.0` decode, while `1` and `0.1` fail with
    * `Could not convert DECIMAL128(0.1) to a Float without losing precision.` A string is parsed.
    */
   implicit val float: BsonDecoder[Float] = new BsonDecoder[Float] {
@@ -709,7 +715,8 @@ trait NumberDecoders { self =>
    * Decodes a BSON number or string as a `Double`.
    *
    * A 32-bit integer, a 64-bit integer, and a double are converted directly; a 64-bit integer with more digits than a
-   * `Double` holds is rounded. A Decimal128 must be the exact decimal form of the `Double`, and a string is parsed.
+   * `Double` holds is rounded. A Decimal128 decodes only when it is written as `Double.toString` writes the result:
+   * `0.1` and `1.0` decode, while `0.10` and `1` fail. A string is parsed.
    */
   implicit val double: BsonDecoder[Double] = new BsonDecoder[Double] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -754,8 +761,8 @@ trait NumberDecoders { self =>
   /**
    * Decodes a BSON number or string as a `java.math.BigDecimal`.
    *
-   * Integers and Decimal128 keep their value. A double is converted through the text of `Double.toString`, so a BSON
-   * double `0.1` decodes as `0.1`. A string is parsed.
+   * Integers keep their value, and a Decimal128 is converted to a `BigDecimal`. A double is converted through the text
+   * of `Double.toString`, so a BSON double `0.1` decodes as `0.1`. A string is parsed.
    */
   implicit val javaBigDecimal: BsonDecoder[JBigDecimal] = new BsonDecoder[JBigDecimal] {
     private def fromString(trace: List[BsonTrace])(s: String) =
@@ -797,8 +804,8 @@ trait NumberDecoders { self =>
   /**
    * Decodes a BSON number or string as a `java.math.BigInteger`.
    *
-   * Integers are taken as is. A double or Decimal128 must hold a whole number, and a string of digits is parsed, which
-   * is the form that the `BigInt` encoder writes.
+   * Integers are taken as is. A double must hold a whole number, a Decimal128 must be written without a fractional part
+   * (`3` decodes, `3.0` fails), and a string of digits is parsed, which is the form that the `BigInt` encoder writes.
    */
   implicit val bigInteger: BsonDecoder[BigInteger] = new BsonDecoder[BigInteger] {
     private def fromString(trace: List[BsonTrace])(s: String) =

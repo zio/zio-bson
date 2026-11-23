@@ -27,11 +27,12 @@ import java.util.regex.Pattern
  * }}}
  *
  * @param sumTypeHandling
- *   how a sealed trait is written: as a wrapper document named after the subtype, which is the default, or with a
- *   discriminator field. See [[BsonCodecConfiguration.SumTypeHandling]].
+ *   how a sealed trait is written: as a document with one field, named after the subtype, that holds the subtype's
+ *   document, which is the default, or with a discriminator field. See [[BsonCodecConfiguration.SumTypeHandling]].
  * @param skipNullsInCaseClass
  *   when `true`, the default, an encoder leaves out a case class field whose encoder reports the value as absent, which
- *   is `None` for an `Option` field. When `false`, such a field is written as BSON null.
+ *   is `None` for an `Option` field. When `false`, such a field is written with its encoder, which writes BSON null for
+ *   `None`.
  * @param classNameMapping
  *   changes the class name of a subtype of a sealed trait into the name that the document uses. The default keeps the
  *   class name. A `bsonHint` annotation on the subtype takes priority.
@@ -40,7 +41,8 @@ import java.util.regex.Pattern
  *   `bsonField` annotation on the field takes priority.
  * @param allowExtraFields
  *   when `true`, the default, a decoder ignores document fields that the case class doesn't have. When `false`, it
- *   fails with `Invalid extra field.`. The `bsonNoExtraFields` annotation turns this off for a single class.
+ *   fails with the message `Invalid extra field.`, except for the discriminator field of a sum type. The
+ *   `bsonNoExtraFields` annotation makes a single class reject extra fields even when this is `true`.
  *
  * @see
  *   [[https://zio.dev/zio-bson/ ZIO BSON]]
@@ -96,20 +98,8 @@ object BsonCodecConfiguration {
      * }
      *
      * val bson = BsonEncoder[Outer].toBsonValue(Outer(SomeBranch(123)))
-     * // {"mySum": {"SomeBranch": {"a": 123} } }
+     * // a document whose mySum field is {"SomeBranch": {"a": 123}}
      * }}}
-     *
-     * The BSON for the value above is:
-     *
-     * ```
-     * {
-     *   mySum: {
-     *     SomeBranch: {
-     *       a: 123
-     *     }
-     *   }
-     * }
-     * ```
      */
     case object WrapperWithClassNameField extends SumTypeHandling
 
@@ -119,8 +109,9 @@ object BsonCodecConfiguration {
      * `bsonDiscriminator` annotation on the sealed trait takes priority over this setting.
      *
      * The subtypes must encode as documents: encoding a value through `toBsonValue` throws a `RuntimeException` with
-     * the message `Subtype is not encoded as an object` when a subtype encodes as another BSON type. When decoding, the
-     * discriminator field is not treated as an extra field of the subtype.
+     * the message `Subtype is not encoded as an object` when a subtype encodes as another BSON type, and `encode` fails
+     * with a `BsonInvalidOperationException` from the writer. When decoding, the discriminator field is not treated as
+     * an extra field of the subtype.
      *
      * {{{
      * import zio.bson._
@@ -140,15 +131,6 @@ object BsonCodecConfiguration {
      * val bson = BsonEncoder[MySum].toBsonValue(SomeBranch(123))
      * // {"a": 123, "type": "SomeBranch"}
      * }}}
-     *
-     * The BSON for the value above has the same fields as:
-     *
-     * ```
-     * {
-     *   type: "SomeBranch"
-     *   a: 123
-     * }
-     * ```
      */
     final case class DiscriminatorField(name: String) extends SumTypeHandling
   }

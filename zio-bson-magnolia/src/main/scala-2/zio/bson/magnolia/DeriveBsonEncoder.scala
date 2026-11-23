@@ -24,8 +24,9 @@ trait DeriveBsonEncoder {
    *
    * A parameter marked `bsonExclude` is left out. The field name is the one in a `bsonField` annotation, or else the
    * parameter name changed by the `fieldNameMapping` of the configuration. A field whose encoder reports the value as
-   * absent, such as an `Option` that is `None`, is left out when `skipNullsInCaseClass` is enabled and is written as
-   * BSON null otherwise. Each parameter needs an encoder in scope.
+   * absent, such as an `Option` that is `None`, is left out when `skipNullsInCaseClass` is enabled, which is the
+   * default. Otherwise the field is written with its encoder, which writes BSON null for `None`. Each parameter needs
+   * an encoder in scope.
    */
   def join[T](caseClass: CaseClass[BsonEncoder, T])(implicit configuration: BsonCodecConfiguration): BsonEncoder[T] =
     new BsonEncoder[T] {
@@ -89,7 +90,8 @@ trait DeriveBsonEncoder {
    * name is the one in a `bsonHint` annotation, or else the class name changed by `classNameMapping`.
    *
    * With a discriminator, `toBsonValue` throws a `RuntimeException` with the message
-   * `Subtype is not encoded as an object` when a subtype is not encoded as a document.
+   * `Subtype is not encoded as an object` when a subtype is not encoded as a document, and `encode` fails with a
+   * `BsonInvalidOperationException` from the writer.
    */
   def split[T](
     sealedTrait: SealedTrait[BsonEncoder, T]
@@ -188,8 +190,8 @@ object DeriveBsonEncoder extends DeriveBsonEncoder {
 
   /**
    * Returns a `zio.bson.BsonEncoder` for `T`, found at compile time. The result follows the implicit
-   * [[BsonCodecConfiguration]] in scope. The fields of a case class and the subtypes of a sealed trait need encoders in
-   * scope.
+   * [[BsonCodecConfiguration]] in scope. The subtypes of a sealed trait are derived as well, but the field types of
+   * each case class need encoders in scope.
    */
   def derive[T]: BsonEncoder[T] = macro Magnolia.gen[T]
 }

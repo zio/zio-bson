@@ -53,8 +53,8 @@ final case class bsonDiscriminator(name: String) extends Annotation
 
 /**
  * Gives a subtype of a sealed trait the name `name` in the BSON document, in place of the name that the configuration's
- * `classNameMapping` produces from its class name. The name is the
- * key of the wrapper document, or the value of the discriminator field.
+ * `classNameMapping` produces from its class name. The name is the key of the wrapper document, or the value of the
+ * discriminator field.
  *
  * {{{
  * // no-check: needs zio-bson-magnolia, which is not published for Scala 2.12

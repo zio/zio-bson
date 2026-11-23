@@ -7,8 +7,8 @@ import scala.language.experimental.macros
 // scalafix:on
 
 /**
- * Derives a `zio.bson.BsonCodec` for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]]
- * and the decoder from [[DeriveBsonDecoder]].
+ * Derives a `zio.bson.BsonCodec` for a case class or a sealed trait, made of the encoder from [[DeriveBsonEncoder]] and
+ * the decoder from [[DeriveBsonDecoder]].
  *
  * {{{
  * import zio.bson._
