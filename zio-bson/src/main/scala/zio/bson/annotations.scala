@@ -52,7 +52,8 @@ final case class bsonField(name: String) extends Annotation
 final case class bsonDiscriminator(name: String) extends Annotation
 
 /**
- * Gives a subtype of a sealed trait the name `name` in the BSON document, in place of its class name. The name is the
+ * Gives a subtype of a sealed trait the name `name` in the BSON document, in place of the name that the configuration's
+ * `classNameMapping` produces from its class name. The name is the
  * key of the wrapper document, or the value of the discriminator field.
  *
  * {{{

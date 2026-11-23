@@ -88,7 +88,7 @@ trait BsonEncoder[A] { self =>
   /**
    * Returns `true` when `value` counts as absent. The encoders that the derivation in `zio-bson-magnolia` creates for
    * case classes leave a field out of the document when its encoder reports the value as absent and
-   * `skipNullsInCaseClass` is enabled.
+   * `skipNullsInCaseClass` is enabled, which is the default.
    *
    * Returns `false` for every value unless overridden. The `Option` encoder returns `true` for `None`.
    */
@@ -206,7 +206,8 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   implicit val period: BsonEncoder[Period] = string.contramap(_.toString)
 
   /**
-   * Encodes a `java.time.Instant` as a BSON date-time holding the milliseconds since the epoch.
+   * Encodes a `java.time.Instant` as a BSON date-time holding the milliseconds since the epoch. Encoding throws a
+   * `java.lang.ArithmeticException` for an instant whose milliseconds don't fit in a `Long`.
    *
    * The precision is one millisecond, so the sub-millisecond part of the instant is not stored.
    */
@@ -295,8 +296,8 @@ object BsonEncoder extends NumberEncoders with CollectionEncoders with BsonValue
   /**
    * Encodes an `Option[A]`: `Some(a)` is encoded with the encoder for `A`, and `None` as BSON null.
    *
-   * [[BsonEncoder#isAbsent]] is `true` for `None`, so a derived case class encoder leaves the field out when
-   * `skipNullsInCaseClass` is enabled in the configuration.
+   * [[BsonEncoder#isAbsent]] is `true` for `None`, so a derived case class encoder leaves the field out unless
+   * `skipNullsInCaseClass` is set to `false` in the configuration.
    *
    * {{{
    * import org.bson.BsonValue
@@ -369,7 +370,10 @@ trait NumberEncoders {
     def toBsonValue(value: Double): BsonValue = new BsonDouble(value)
   }
 
-  /** Encodes a `java.math.BigDecimal` as a BSON Decimal128. */
+  /**
+   * Encodes a `java.math.BigDecimal` as a BSON Decimal128. Encoding throws a `java.lang.NumberFormatException` for a
+   * value that Decimal128 can't hold exactly, such as one with more than 34 significant digits.
+   */
   implicit val javaBigDecimal: BsonEncoder[JBigDecimal] = new BsonEncoder[JBigDecimal] {
 
     def encode(writer: BsonWriter, value: JBigDecimal, ctx: EncoderContext): Unit =
@@ -380,7 +384,10 @@ trait NumberEncoders {
     )
   }
 
-  /** Encodes a `scala.BigDecimal` as a BSON Decimal128. */
+  /**
+   * Encodes a `scala.BigDecimal` as a BSON Decimal128. Encoding throws a `java.lang.NumberFormatException` for a value
+   * that Decimal128 can't hold exactly, such as one with more than 34 significant digits.
+   */
   implicit val bigDecimal: BsonEncoder[BigDecimal] = javaBigDecimal.contramap(_.underlying())
 
   /**
@@ -421,7 +428,8 @@ trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
    * Encodes a map as a BSON document. Each key is turned into a field name by the implicit [[BsonFieldEncoder]] for
    * `K`, and each value is encoded with the encoder for `V`.
    *
-   * Entries whose value is absent (see [[BsonEncoder#isAbsent]]), such as `None`, are written as BSON null.
+   * Every entry is written, including those whose value is absent (see [[BsonEncoder#isAbsent]]). A `None` value is
+   * written as BSON null.
    *
    * {{{
    * import org.bson.BsonValue
@@ -462,7 +470,7 @@ trait CollectionEncoders extends LowPriorityCollectionEncoders1 {
   }
 }
 
-/** Implicit encoders for sequences and arrays, tried after the encoders in [[CollectionEncoders]]. */
+/** Implicit encoders for collections, arrays and `zio.NonEmptyChunk`, tried after the encoders in [[CollectionEncoders]]. */
 trait LowPriorityCollectionEncoders1 {
 
   /**
@@ -506,8 +514,9 @@ trait BsonValueEncoders {
    * Encodes any `org.bson.BsonValue` as itself. [[BsonEncoder#toBsonValue]] returns the value unchanged.
    *
    * When writing to a `BsonWriter`, the value is written with the default codec of the MongoDB driver for its class.
-   * The call throws a `RuntimeException` with the message `Can't find codec for BsonValue subtype <class name>` when
-   * the driver has no default codec for that class.
+   * When the driver has no default codec for that class, the call throws an
+   * `org.bson.codecs.configuration.CodecConfigurationException`, with a message such as
+   * `Can't find a codec for CodecCacheKey{clazz=class <class name>, types=null}.`
    */
   implicit def bsonValueEncoder[T <: BsonValue]: BsonEncoder[T] = new BsonEncoder[T] {
 

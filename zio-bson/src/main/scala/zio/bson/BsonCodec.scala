@@ -84,7 +84,8 @@ final case class BsonCodec[A](encoder: BsonEncoder[A], decoder: BsonDecoder[A]) 
 }
 
 /**
- * The implicit codecs for the types that `zio-bson` supports, and the `BsonCodec.apply` constructors.
+ * The implicit codecs for the types that `zio-bson` supports, the `BsonCodec.apply` summoner, and the `BsonCodec.apply`
+ * overload that builds a codec from an encoder and a decoder.
  *
  * Each codec pairs the encoder and the decoder of the same type from the [[BsonEncoder]] and [[BsonDecoder]]
  * companions, so the mapping of each type is described there.
@@ -235,7 +236,7 @@ trait CollectionCodecs extends LowPriorityCollectionCodecs {
     BsonCodec(BsonEncoder.map[K, V, CC], BsonDecoder.mapFactory[K, V, CC])
 }
 
-/** Implicit codecs for sequences and arrays, tried after the codecs in [[CollectionCodecs]]. */
+/** Implicit codecs for collections, arrays and `zio.NonEmptyChunk`, tried after the codecs in [[CollectionCodecs]]. */
 trait LowPriorityCollectionCodecs {
 
   /** A codec for `zio.NonEmptyChunk[A]`, using a BSON array. */
